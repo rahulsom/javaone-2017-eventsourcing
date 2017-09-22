@@ -1,0 +1,329 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="author" content="Rahul Somasunderam" /><title>Event Sourcing with JVM Languages</title><meta content="yes" name="apple-mobile-web-app-capable" /><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style" /><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui" name="viewport" /><link href="reveal.js/css/reveal.css" rel="stylesheet" /><link rel="stylesheet" href="reveal.js/css/theme/custom.css" id="theme" /><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css" /><script type="text/x-mathjax-config">MathJax.Hub.Config({
+tex2jax: {
+  inlineMath: [["\\(", "\\)"]],
+  displayMath: [["\\[", "\\]"]],
+  ignoreClass: "nostem|nolatexmath"
+},
+asciimath2jax: {
+  delimiters: [["\\$", "\\$"]],
+  ignoreClass: "nostem|noasciimath"
+},
+TeX: { equationNumbers: { autoNumber: "none" } }
+});</script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.4.0/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script><link href="reveal.js/lib/css/zenburn.css" rel="stylesheet" /><script>document.write( '<link rel="stylesheet" href="reveal.js/css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );</script><script src="https://code.jquery.com/jquery-2.2.4.min.js" ></script></head><body><div class="reveal"><div class="slides"><section class="title" data-state="title"><h1>Event Sourcing with JVM Languages</h1><p class="author"><small>Rahul Somasunderam</small></p></section><section id="slide-about-me"><h2>About Me</h2><div class="ulist step"><ul><li class="fragment"><p>Wanted Event Sourcing in 2016</p></li><li class="fragment"><p>Didn&#8217;t like anything I saw</p></li><li class="fragment"><p>Built my own thing - Grooves</p></li><li class="fragment"><p>I solve problems in HealthCare</p></li></ul></div></section>
+<section id="slide-where-i-work"><h2>Where I work</h2><div class="imageblock" style=""><img src="./images/BoxCutter.png" alt="BoxCutter" height="300em" /></div>
+<div class="ulist"><ul><li><p>Used by 130 Health Systems, 600 Hospitals, 20K physicians</p></li><li><p>10M patients</p></li></ul></div></section>
+<section id="slide-about-you" class="to-top"><h2>About You</h2><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:25%" /><col style="width:25%" /><col style="width:25%" /><col style="width:25%" /></colgroup><tbody><tr><td class="tableblock halign-left valign-top"><div><div class="imageblock fragment" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Duke_%28Java_mascot%29_waving.svg/568px-Duke_%28Java_mascot%29_waving.svg.png" alt="568px Duke %28Java mascot%29 waving.svg" height="200em" /></div></div></td><td class="tableblock halign-left valign-top"><div><div class="imageblock fragment" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Groovy-logo.svg/1200px-Groovy-logo.svg.png" alt="1200px Groovy logo.svg" height="200em" /></div></div></td><td class="tableblock halign-left valign-top"><div><div class="imageblock fragment" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Kotlin-logo.png" alt="Kotlin logo" height="200em" /></div></div></td><td class="tableblock halign-left valign-top"><div><div class="imageblock fragment" style=""><img src="https://cdn1.iconfinder.com/data/icons/smoothline-action/30/action_042-detail-more-info-others-512.png" alt="action 042 detail more info others 512" height="200em" /></div></div></td></tr></tbody></table></section>
+<section><section id="slide-what-is-event-sourcing"><h2>What is Event Sourcing</h2><div class="quoteblock"><blockquote><div class="paragraph"><p>Treat your database like you treat your application logs</p></div></blockquote></div><aside class="notes"><div class="paragraph"><p>Almost everyone produces application logs.
+Most of us debug other people&#8217;s applications using logs.</p></div></aside></section><section id="slide-what-does-that-mean"><h2>What does that mean</h2><div class="paragraph"><p>Create</p></div>
+<div class="paragraph"><p>Read</p></div>
+<div class="paragraph"><p><span class="line-through">Update</span></p></div>
+<div class="paragraph"><p><span class="line-through">Delete</span></p></div></section></section>
+<section><section id="slide-bad-example-1" data-background-color="darkred"><h2>Bad Example 1</h2><div class="paragraph"><p>Mark and Jane share a bank account.
+The account has a balance of $75.
+Mark goes to an ATM and withdraws $50.
+At the same time Jane attempts to withdraw $50.</p></div><div class="paragraph"><p>This is what our code looks like</p></div><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">@Transactional
+boolean withdraw(String accountNumber, double amount) {
+  double balance = accountService.getBalance(accountNumber);
+  if (balance &gt; amount) {
+    balance -= account;
+    accountService.setBalance(accountNumber, balance);
+    return true;
+  } else {
+    return false;
+  }
+}</code></pre></div></div><script>$('#slide-bad-example-1 pre').attr('data-line', '1');</script><aside class="notes"><div class="paragraph"><p>A lot of text books and tutorials teach transaction management this way.
+Adding <code>@Transactional</code> is what they recommend.</p></div></aside></section><section id="slide-what-banks-typically-do"><h2>What banks typically do</h2><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/2/20/SampleBankbook.png" alt="SampleBankbook" /></div></section><section id="slide-but-that-was-em-banking-em"><h2>But that was <em>Banking</em></h2><div class="paragraph fragment"><p>If you can look at your logs and debug your application, you are already doing that.</p></div>
+<div class="paragraph fragment"><p>Banks defined their business model this way hundreds of years ago.</p></div></section><section id="slide-what-about-my-domain"><h2>What about my domain?</h2><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:33.3333%" /><col style="width:33.3333%" /><col style="width:33.3334%" /></colgroup><tbody><tr><td class="tableblock halign-left valign-top"><div><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">/* Aggregate */
+class Account {
+  String accountNumber;
+}</code></pre></div></div></div></td><td class="tableblock halign-left valign-top"><div><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">/* Events */
+abstract class Transaction {
+  Account account;
+}
+class AtmWithdrawal
+    extends Transaction {
+  String location;
+  double amount;
+}
+class AtmDeposit
+    extends Transaction {
+  String location;
+  double amount;
+}</code></pre></div></div></div></td><td class="tableblock halign-left valign-top"><div><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">/* Snapshot */
+class AccountSummary {
+  double balance;
+}</code></pre></div></div></div></td></tr></tbody></table>
+<aside class="notes"><div class="paragraph"><p>Hello World!</p></div></aside></section><section id="slide-what-about-my-domain-2"><h2>What about my domain?</h2><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:33.3333%" /><col style="width:33.3333%" /><col style="width:33.3334%" /></colgroup><tbody><tr><td class="tableblock halign-left valign-top"><div><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">/* Aggregate */
+class Patient {
+  String identifier;
+  String system;
+}</code></pre></div></div></div></td><td class="tableblock halign-left valign-top"><div><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">/* Events */
+abstract class PatientEvent {
+  Patient patient;
+}
+class MedicationPrescribed
+    extends PatientEvent {
+  String code;
+  int quantity;
+}
+class ProcedurePerformed
+    extends PatientEvent {
+  String code;
+}</code></pre></div></div></div></td><td class="tableblock halign-left valign-top"><div><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">/* Snapshot */
+class PatientSummary {
+  List&lt;String&gt; medications;
+  List&lt;String&gt; procedures;
+}</code></pre></div></div></div></td></tr></tbody></table>
+<aside class="notes"><div class="paragraph"><p>Hello World!</p></div></aside></section><section id="slide-computing-snapshots"><h2>Computing Snapshots</h2><div class="stemblock"><div class="content">\$S_N = f(S_0 , E_1..E_N)\$</div></div>
+<table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:20%" /><col style="width:80%" /></colgroup><tbody><tr><td class="tableblock halign-right valign-top"><div><div class="paragraph"><p>\$S_N\$</p></div></div></td><td class="tableblock halign-left valign-top"><p class="tableblock">Snapshot at Version N</p></td></tr><tr><td class="tableblock halign-right valign-top"><div><div class="paragraph"><p>\$S_0\$</p></div></div></td><td class="tableblock halign-left valign-top"><p class="tableblock">empty snapshot</p></td></tr><tr><td class="tableblock halign-right valign-top"><div><div class="paragraph"><p>\$E_1..E_N\$</p></div></div></td><td class="tableblock halign-left valign-top"><p class="tableblock">events from position 1 through N</p></td></tr><tr><td class="tableblock halign-right valign-top"><div><div class="paragraph"><p>\$f\$</p></div></div></td><td class="tableblock halign-left valign-top"><p class="tableblock">query</p></td></tr></tbody></table></section></section>
+<section><section id="slide-but-it-s-not-that-simple" data-background-color="darkred"><h2>But it&#8217;s not that simple</h2></section><section id="slide-incremental-computation"><h2>Incremental Computation</h2><div class="paragraph"><p>In Mathematics, it&#8217;s called the distributive property</p></div>
+<div class="stemblock"><div class="content">\$a+b+c = (a+b) +c\$</div></div>
+<div class="paragraph"><p>In our case, this is what we would like to do</p></div>
+<div class="stemblock"><div class="content">\$S_N = f(S_K , E_(K+1)..E_N)\$</div></div></section><section id="slide-we-re-not-done-yet" data-background-color="darkred"><h2>We&#8217;re not done yet</h2><div class="paragraph"><p>There are special events</p></div></section><section id="slide-revert"><h2>Revert</h2><div class="imageblock" style=""><img src="https://rahulsom.github.io/grooves/manual/0.2.0/RevertEvent.svg" alt="RevertEvent" /></div>
+<div class="imageblock fragment" style=""><img src="https://rahulsom.github.io/grooves/manual/0.2.0/RevertEventEffective.svg" alt="RevertEventEffective" /></div></section><section id="slide-revert-again"><h2>Revert Again</h2><div class="imageblock" style=""><img src="https://rahulsom.github.io/grooves/manual/0.2.0/RevertOnRevert.svg" alt="RevertOnRevert" /></div>
+<div class="imageblock fragment" style=""><img src="https://rahulsom.github.io/grooves/manual/0.2.0/RevertOnRevertEffective.svg" alt="RevertOnRevertEffective" /></div></section><section id="slide-merge-deprecate"><h2>Merge/Deprecate</h2><div class="imageblock" style=""><img src="https://rahulsom.github.io/grooves/manual/0.2.0/MergeAggregates.svg" alt="MergeAggregates" /></div>
+<div class="imageblock fragment" style=""><img src="https://rahulsom.github.io/grooves/manual/0.2.0/MergeAggregatesEffective.svg" alt="MergeAggregatesEffective" /></div></section><section id="slide-reverting-a-merge"><h2>Reverting a Merge</h2><div class="imageblock" style=""><img src="https://rahulsom.github.io/grooves/manual/0.2.0/RevertMergeBefore.svg" alt="RevertMergeBefore" /></div>
+<div class="imageblock fragment" style=""><img src="https://rahulsom.github.io/grooves/manual/0.2.0/RevertMergeAfter.svg" alt="RevertMergeAfter" /></div></section></section>
+<section><section id="slide-bad-example-2"><h2>Bad Example 2</h2><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:50%" /><col style="width:50%" /></colgroup><tbody><tr><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Employee</p></div>
+<table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:33.3333%" /><col style="width:33.3333%" /><col style="width:33.3334%" /></colgroup><thead><tr><th class="tableblock halign-right valign-top">ID</th><th class="tableblock halign-left valign-top">EMP_NAME</th><th class="tableblock halign-right valign-top">DEPT_ID</th></tr></thead><tbody><tr><td class="tableblock halign-right valign-top"><p class="tableblock">1</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Mr Spock</p></td><td class="tableblock halign-right valign-top"><p class="tableblock">1</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">2</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Scotty</p></td><td class="tableblock halign-right valign-top"><p class="tableblock">2</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">3</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Kirk</p></td><td class="tableblock halign-right valign-top"><p class="tableblock">3</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">4</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Janeway</p></td><td class="tableblock halign-right valign-top"><p class="tableblock">3</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">5</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">La Forge</p></td><td class="tableblock halign-right valign-top"><p class="tableblock">2</p></td></tr></tbody></table></div></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Department</p></div>
+<table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:50%" /><col style="width:50%" /></colgroup><thead><tr><th class="tableblock halign-right valign-top">ID</th><th class="tableblock halign-left valign-top">DEPT_NAME</th></tr></thead><tbody><tr><td class="tableblock halign-right valign-top"><p class="tableblock">1</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Science</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">2</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Engineering</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">3</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Command</p></td></tr></tbody></table></div></td></tr></tbody></table></section><section id="slide-joins-in-event-sourcing"><h2>Joins in Event Sourcing</h2><div class="imageblock" style=""><img src="https://rahulsom.github.io/grooves/manual/0.2.0/JoinExample.svg" alt="JoinExample" /></div></section><section id="slide-disjoins-too"><h2>Disjoins too</h2><div class="imageblock" style=""><img src="https://rahulsom.github.io/grooves/manual/0.2.0/DisjoinExample.svg" alt="DisjoinExample" /></div></section></section>
+<section><section id="slide-grooves-domain-objects"><h2>Grooves Domain Objects</h2></section><section id="slide-aggregates"><h2>Aggregates</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class Patient implements AggregateType&lt;Long&gt; {
+    private Long id;
+    private String uniqueId;
+}</code></pre></div></div></section><section id="slide-events"><h2>Events</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public abstract class PatientEvent implements
+        BaseEvent&lt;Long, Patient, Long, PatientEvent&gt; {
+    private Patient aggregate;
+    private Long id;
+    private String createdBy;
+    private RevertEvent&lt;Long, Patient, Long, PatientEvent&gt; revertedBy;
+    private Date timestamp;
+    private Long position;
+
+    @Override
+    @NotNull
+    public Observable&lt;Patient&gt; getAggregateObservable() {
+        return aggregate != null ? just(aggregate) : empty();
+    }
+}</code></pre></div></div></section><section id="slide-real-events"><h2>Real Events</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class PatientCreated extends PatientEvent {
+    private String name;
+
+    @Override
+    public String getAudit() {
+        return "name: " + name;
+    }
+
+    public PatientCreated(String name) {
+        this.name = name;
+    }
+}</code></pre></div></div></section><section id="slide-special-events"><h2>Special Events</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class PatientEventReverted
+        extends PatientEvent
+        implements RevertEvent&lt;Long, Patient, Long, PatientEvent&gt; {
+    private Long revertedEventId;
+
+    @Override
+    public Long getRevertedEventId() {
+        return revertedEventId;
+    }
+
+    @Override
+    public String getAudit() {
+        return "revertedEvent:" + revertedEventId;
+    }
+}</code></pre></div></div></section><section id="slide-snapshots"><h2>Snapshots</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class PatientAccount
+        implements JavaSnapshot&lt;Long, Patient, Long, Long, PatientEvent&gt;,
+        Serializable {
+    private Long id;
+    private Patient aggregate;
+    private Patient deprecatedBy;
+    private List&lt;Patient&gt; deprecates = new ArrayList&lt;&gt;();
+    private Long lastEventPosition;
+    private Date lastEventTimestamp;
+
+    private String name;
+    private BigDecimal balance = new BigDecimal(0);
+    private BigDecimal moneyMade = new BigDecimal(0);
+
+    public Observable&lt;Patient&gt; getAggregateObservable() {
+        return just(aggregate);
+    }
+
+    public Observable&lt;Patient&gt; getDeprecatedByObservable() {
+        return just(deprecatedBy);
+    }
+
+    public Observable&lt;Patient&gt; getDeprecatesObservable() {
+        return from(deprecates);
+    }
+}</code></pre></div></div>
+<script>$('#slide-snapshots pre').attr('data-line', '11-13');</script></section></section>
+<section><section id="slide-grooves-queries"><h2>Grooves Queries</h2></section><section id="slide-satisfying-grooves"><h2>Satisfying grooves</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class PatientAccountQuery&lt;...&gt; extends QuerySupport&lt;...&gt; {
+    ...
+}</code></pre></div></div>
+<div class="paragraph"><p>Could also be <code>VersionedQuerySupport</code> or <code>TemporalQuerySupport</code></p></div></section><section id="slide-fetching-snapshots"><h2>Fetching snapshots</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    @Override
+    public PatientAccount createEmptySnapshot() {
+        return new PatientAccount();
+    }
+
+    @Override
+    public Observable&lt;PatientAccount&gt; getSnapshot(
+            long maxPosition, Patient aggregate) {
+        ...
+    }
+
+    @Override
+    public Observable&lt;PatientAccount&gt; getSnapshot(
+            Date maxTimestamp, Patient aggregate) {
+        ...
+    }</code></pre></div></div></section><section id="slide-fetching-events"><h2>Fetching events</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    @Override
+    public Observable&lt;PatientEvent&gt; getUncomputedEvents(
+            Patient aggregate, PatientAccount lastSnapshot, long version) {
+
+    }
+
+    @Override
+    public Observable&lt;PatientEvent&gt; getUncomputedEvents(
+            Patient aggregate, PatientAccount lastSnapshot, Date snapshotTime) {
+
+    }</code></pre></div></div></section><section id="slide-stopping-computations-early"><h2>Stopping computations early</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    @Override
+    default boolean shouldEventsBeApplied(PatientAccount snapshot) {
+        return true;
+    }</code></pre></div></div></section><section id="slide-handling-errors"><h2>Handling Errors</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    @Override
+    default Observable&lt;EventApplyOutcome&gt; onException(
+            Exception e, PatientAccount snapshot, PatientEvent event) {
+        getLog().error("Error computing snapshot", e);
+        return just(CONTINUE);
+    }</code></pre></div></div></section><section id="slide-processing-events"><h2>Processing events</h2><div class="paragraph"><p>For languages like Java, Groovy</p></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    public Observable&lt;EventApplyOutcome&gt; applyPatientCreated(
+            PatientCreated event, PatientAccount snapshot) {
+        if (snapshot.getAggregate() == event.getAggregate()) {
+            snapshot.setName(event.getName());
+        }
+        return just(CONTINUE);
+    }
+
+    ...</code></pre></div></div></section><section id="slide-processing-events-2"><h2>Processing events</h2><div class="paragraph"><p>For languages with case classes</p></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="kotlin language-kotlin">    override fun applyEvent(
+        event: PatientEvent.Applicable, snapshot: PatientAccount) =
+            when (event) {
+                is PatientEvent.Applicable.Created -&gt; {
+                    // Your logic here
+                    just(CONTINUE)
+                }
+                is PatientEvent.Applicable.ProcedurePerformed -&gt; {
+                    // Your logic here
+                    just(CONTINUE)
+                }
+                is PatientEvent.Applicable.PaymentMade -&gt; {
+                    // Your logic here
+                    just(CONTINUE)
+                }
+            }</code></pre></div></div></section><section id="slide-events-2"><h2>Events</h2><div class="paragraph"><p>For languages with case classes</p></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="kotlin language-kotlin">sealed class PatientEvent : BaseEvent&lt;...&gt; {
+    // Properties and methods from equivalent java class
+
+    sealed class Applicable : PatientEvent() {
+        data class Created(val name: String) : Applicable() {
+            override fun getAudit(): String = "$id - Created '$name'"
+        }
+    }
+
+    data class Reverted(override val revertedEventId: String) :
+            PatientEvent(), RevertEvent&lt;...&gt; {
+        override fun getAudit(): String = "$id - Revert $revertedEventId"
+    }
+}</code></pre></div></div></section><section id="slide-completeness-for-java"><h2>Completeness for Java</h2><div class="paragraph"><p>&#8230;&#8203;and Groovy.</p></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">@Aggregate public class Patient {...}
+public abstract class PatientEvent {}
+
+@Event(Patient.class)
+public class ProcedurePerformed extends PatientEvent {}
+@Event(Patient.class)
+public class PaymentMade extends PatientEvent {}
+
+@Query(aggregate=Patient.class, snapshot=PatientAccount.class)
+public class PatientAccountQuery {
+    ...
+    Observable&lt;EventApplyOutcome&gt; applyProcedurePerformed() {...}
+    Observable&lt;EventApplyOutcome&gt; applyPaymentMade() {...}
+}</code></pre></div></div></section></section>
+<section><section id="slide-gotchas"><h2>Gotchas</h2></section><section id="slide-lance-one" data-background-image="http://www.vosizneias.com/wp-content/uploads/2013/01/h_50493197.jpg"><div class="paragraph"><p><span class="lance">How many Tour de France General Classification Tour victories did this guy have on 2007-10-01?</span></p></div></section><section id="slide-lance-armstrong"><h2>Lance Armstrong</h2><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:50%" /><col style="width:50%" /></colgroup><tbody><tr><td class="tableblock halign-left valign-top"><div><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:33.3333%" /><col style="width:66.6667%" /></colgroup><tbody><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1992</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Joins Motorola</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1993</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>DNF</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1994</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>DNF</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1995</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>36</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1996</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>DNF</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1996-10-02</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Diagnosed with Cancer</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1997-02</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Declared cancer free</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1998</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Joins US Postal</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1999</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2000</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2001</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr></tbody></table></div></td><td class="tableblock halign-left valign-top"><div><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:33.3333%" /><col style="width:66.6667%" /></colgroup><tbody><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2002</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2003</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2004</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2005</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2005</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Retires</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2009</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Returns from retirement</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2009</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>3</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2010</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>23</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2010</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Retires</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2012-10</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Stripped of all wins from 1998 through 2010</p></div></div></td></tr></tbody></table></div></td></tr></tbody></table></section><section id="slide-lance-two" data-background-image="http://www.vosizneias.com/wp-content/uploads/2013/01/h_50493197.jpg"><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:37.5%" /><col style="width:25%" /><col style="width:37.5%" /></colgroup><tbody><tr><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><span class="lance">1. Based on what we knew in 2007, How many TdF GC Tour victories did he have on 2007-10-01?</span></p></div></div></td><td class="tableblock halign-left valign-top"></td><td class="tableblock halign-right valign-top"><div><div class="paragraph"><p><span class="lance">2. Based on what we know in 2017, How many TdF GC Tour victories did he have on 2007-10-01?</span></p></div></div></td></tr></tbody></table>
+<div class="paragraph fragment"><p><span class="lance">Asking the right question is key</span></p></div></section><section id="slide-advice-on-handling-data"><h2>Advice on handling data</h2><div class="ulist"><ul><li><p>Be very careful about what your events look like.</p></li><li><p>Don&#8217;t worry much about what your snapshots look like.</p></li></ul></div></section><section id="slide-communication-is-key" class="to-top"><h2>Communication is key</h2><blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">95% of the cost of event sourcing projects is explaining event sourcing</p>&mdash; Scott Bellware (@sbellware) <a href="https://twitter.com/sbellware/status/873723025472016384">June 11, 2017</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<div class="paragraph"><p>Having detailed documentation on what your aggregates, events and snapshots are, really helps.</p></div></section><section id="slide-non-event-sources-of-data"><h2>Non Event Sources of data</h2><div class="paragraph"><p>When the intent of the user is not clear from the datasource.</p></div></section><section data-background-image="https://cdn-images-1.medium.com/max/1024/1*_ZgKAMXsx8DLTJzy7ZYORg.jpeg"></section><section id="slide-thank-you"><h2>Thank you</h2><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:20%" /><col style="width:80%" /></colgroup><tbody><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Slidedeck</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://github.com/rahulsom/javaone-2017-eventsourcing">rahulsom/javaone-2017-eventsourcing</a></p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Grooves</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://github.com/rahulsom/grooves">rahulsom/grooves</a></p></td></tr></tbody></table></section></section></div></div><script src="reveal.js/lib/js/head.min.js"></script><script src="reveal.js/js/reveal.js"></script><script>// See https://github.com/hakimel/reveal.js#configuration for a full list of configuration options
+Reveal.initialize({
+  // Display controls in the bottom right corner
+  controls: true,
+  // Display a presentation progress bar
+  progress: true,
+  // Display the page number of the current slide
+  slideNumber: true,
+  // Push each slide change to the browser history
+  history: true,
+  // Enable keyboard shortcuts for navigation
+  keyboard: true,
+  // Enable the slide overview mode
+  overview: true,
+  // Vertical centering of slides
+  center: true,
+  // Enables touch navigation on devices with touch input
+  touch: true,
+  // Loop the presentation
+  loop: false,
+  // Change the presentation direction to be RTL
+  rtl: false,
+  // Turns fragments on and off globally
+  fragments: true,
+  // Flags if the presentation is running in an embedded mode,
+  // i.e. contained within a limited portion of the screen
+  embedded: false,
+  // Number of milliseconds between automatically proceeding to the
+  // next slide, disabled when set to 0, this value can be overwritten
+  // by using a data-autoslide attribute on your slides
+  autoSlide: 0,
+  // Stop auto-sliding after user input
+  autoSlideStoppable: true,
+  // Enable slide navigation via mouse wheel
+  mouseWheel: false,
+  // Hides the address bar on mobile devices
+  hideAddressBar: true,
+  // Opens links in an iframe preview overlay
+  previewLinks: false,
+  // Theme (e.g., beige, black, league, night, serif, simple, sky, solarized, white)
+  // NOTE setting the theme in the config no longer works in reveal.js 3.x
+  //theme: Reveal.getQueryHash().theme || 'custom',
+  // Transition style (e.g., none, fade, slide, convex, concave, zoom)
+  transition: Reveal.getQueryHash().transition || 'linear',
+  // Transition speed (e.g., default, fast, slow)
+  transitionSpeed: 'default',
+  // Transition style for full page slide backgrounds (e.g., none, fade, slide, convex, concave, zoom)
+  backgroundTransition: 'fade',
+  // Number of slides away from the current that are visible
+  viewDistance: 3,
+  // Parallax background image (e.g., "'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg'")
+  parallaxBackgroundImage: '',
+  // Parallax background size in CSS syntax (e.g., "2100px 900px")
+  parallaxBackgroundSize: '',
+
+  // The "normal" size of the presentation, aspect ratio will be preserved
+  // when the presentation is scaled to fit different resolutions. Can be
+  // specified using percentage units.
+  width: 960,
+  height: 700,
+
+  // Factor of the display size that should remain empty around the content
+  margin: 0.1,
+
+  // Bounds for smallest/largest possible scale to apply to content
+  minScale: 0.2,
+  maxScale: 1.5,
+
+  // Optional libraries used to extend on reveal.js
+  dependencies: [
+      { src: 'reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+      { src: 'reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+      { src: 'reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+      
+      { src: 'reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+      { src: 'reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+  ]
+});</script><script src="scripts/prism.js"></script></body></html>

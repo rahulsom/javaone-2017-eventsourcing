@@ -1,0 +1,146 @@
+@import url(white.css);
+@import url(prism.css);
+
+.reveal pre {
+    box-shadow: none;
+    width: 100%;
+}
+
+.reveal .slides section.to-top {
+    top: 0 !important;
+}
+
+.reveal section img {
+    border: none;
+    box-shadow: none;
+}
+
+.line-through {
+    text-decoration: line-through;
+    text-line-through-color: red;
+}
+
+.reveal code {
+    font-family: "Fira Code", Menlo, Consolas, monospace;
+    /*font-size: 0.75em;*/
+}
+
+.reveal code span {
+    /*z-index: 100;*/
+}
+
+.line-highlight {
+    background: linear-gradient(to right, hsla(61, 92%, 58%, 0.35) 70%, hsla(61, 92%, 58%, 0.65));
+}
+
+pre[class*="language-"] {
+    border-left: 2px solid #358ccb;
+}
+
+.reveal p.tableblock {
+    margin: 0;
+}
+
+td.halign-right p {
+    text-align: right;
+}
+
+.reveal th.halign-right {
+    text-align: right;
+}
+
+.reveal pre code {
+    max-height: 500px;
+}
+
+.lance {
+    color: white;
+    background-color: rgba(100,100,100,0.75);
+    text-align: left;
+    max-width: 50%;
+    padding-top: 30%;
+    margin-left: -10%;
+}
+
+#slide-lance-armstrong table td {
+    text-align: left;
+    padding: 0 0.5em 0 0.5em;
+    border-bottom: 0;
+    border-left: 3px solid rgba(100,100,100,0.75);
+    font-size: 0.8em;
+}
+
+#slide-lance-armstrong table table td {
+    text-align: left;
+    padding: 0 0.5em 0 0.5em;
+    border: 0;
+    /*padding-left: 5px;*/
+}
+
+#slide-bad-example-2 table td {
+    text-align: left;
+    padding: 0 0.5em 0 0.5em;
+    border-bottom: 0;
+    border-left: 3px solid rgba(100,100,100,0.75);
+    font-size: 0.8em;
+}
+
+#slide-bad-example-2 table table td {
+    text-align: left;
+    padding: 0 0.5em 0 0.5em;
+    border: 0;
+    /*padding-left: 5px;*/
+}
+
+#slide-lance-armstrong table table td p, #slide-lance-armstrong table table td img {
+    margin: 0;
+}
+
+#slide-computing-snapshots table {
+    margin-top: 10%;
+}
+#slide-computing-snapshots table td {
+    border-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+iframe.twitter-tweet {
+    transform: scale(2.0) translateY(30%) /*translateX(20%)*/ !important;
+    display: inline !important;
+}
+
+twitterwidget {
+    display: inline !important;
+    zoom: 200%;
+}
+
+/* Chrome, Safari, Opera */
+@-webkit-keyframes zoom {
+    from {
+        -webkit-transform: scale(0.75,0.75);
+    }
+    to {
+        -webkit-transform: scale(1,1);
+    }
+}
+
+/* Standard syntax */
+@keyframes zoom {
+    from {
+        transform: scale(0.75,0.75);
+    }
+    to {
+        transform: scale(1,1);
+    }
+}
+
+
+#slide-about-you img {
+    -webkit-animation: zoom 50s; /* Chrome, Safari, Opera */
+    animation: zoom 50s;
+}
+
+#slide-thank-you table td, #slide-thank-you table th {
+    border-bottom: 0 !important;
+}
