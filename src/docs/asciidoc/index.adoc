@@ -1,0 +1,1022 @@
+= Event Sourcing with JVM Languages
+Rahul Somasunderam <rahul.som@gmail.com>
+:imagesdir: images
+:sourcedir: snippets
+:stem:
+:icons: font
+
+[NOTE.speaker]
+--
+Good afternoon everyone! My name is Rahul.
+This talk is about Event Sourcing, JVM Languages and how they play with each other.
+If you have a question, feel free to grab my attention; I'll do my best to answer it right away.
+--
+
+== About Me
+
+[.step]
+* Wanted Event Sourcing in 2016
+* Didn't like anything I saw
+* Built my own thing - Grooves
+* I solve problems in HealthCare
+
+[NOTE.speaker]
+--
+Until mid 2015, I had never heard of the term event sourcing.
+I learnt about it at a conference talk in Minneapolis, and the idea captivated my mind since then.
+
+In early 2016, I was given a problem to solve, and after digging around, I felt that this would be a great place to use event sourcing.
+So I started looking for libraries and frameworks that solved that problem.
+Unfortunately, nothing worked for my specific problems.
+
+So I did the next best thing - I wrote my own solution.
+This talk will use that in examples, but most ideas are transferrable to other libraries.
+
+Also, I work in HealthCare.
+That probably explains #2 on the list.
+--
+
+=== What's wrong with other tools
+
+image::Trump.png[]
+
+[NOTE.speaker]
+--
+I don't really blame the developers of other libraries.
+If you work in HealthCare and want to trash talk the standards in HealthCare, find me after the talk.
+--
+
+== Where I work
+
+image::BoxCutter.png[height="300em"]
+
+Used by 70+ Health Systems,
+        1.4k Locations,
+        8.5k Physicians.
+
+
+[NOTE.speaker]
+--
+I work for a company called Transcend Insights.
+We traditionally dealt with _Health Information Exchange_ and _Health data analytics_.
+
+We wanted to get into data warehousing and reporting.
+That's where we ended up using event sourcing.
+
+Our raw data is very different from IOT, Banking, and Retail.
+They have thousands of events a second, with payloads typically in a few kilobytes.
+We have tens of events a second, at best, and ridiculously large payloads.
+100s of kb to 10s of Mb is fairly common.
+Occasionally we go up to a few Gb of data.
+--
+
+[.to-top]
+== About You
+
+[cols=4]
+|===
+a|[.fragment]
+image::https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Duke_%28Java_mascot%29_waving.svg/568px-Duke_%28Java_mascot%29_waving.svg.png[height=200em]
+a|[.fragment]
+image::https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Groovy-logo.svg/1200px-Groovy-logo.svg.png[height=200em]
+a|[.fragment]
+image::https://upload.wikimedia.org/wikipedia/commons/b/b5/Kotlin-logo.png[height=200em]
+a|[.fragment]
+image::https://cdn1.iconfinder.com/data/icons/smoothline-action/30/action_042-detail-more-info-others-512.png[height=200em]
+|===
+
+[NOTE.speaker]
+--
+Let's do a show of hands.
+
+How many of you use Java as your primary language for writing code?
+
+Groovy?
+
+Kotlin?
+
+Others?
+
+My examples are targeted towards Java, Groovy and Kotlin, but if it works with these languages, it should work with most languages.
+--
+
+== What is Event Sourcing
+
+> Treat your database like you treat your application logs
+
+[NOTE.speaker]
+--
+Almost everyone produces application logs.
+Most of us debug other people's applications using logs.
+Some of us audit the application using application logs.
+--
+
+=== What does that mean
+
+Create
+
+Read
+
+[line-through]#Update#
+
+[line-through]#Delete#
+
+[NOTE.speaker]
+--
+I think this was spotted early on in Jonas Bonér's slide decks.
+It beautifully represents what we need to be doing.
+Sometimes you'll have legal requirements to remove data, i.e. offer consumers a right to be forgotten.
+--
+
+[background-color="darkred"]
+== Bad Example 1
+
+Mark and Jane share a bank account.
+The account has a balance of $75.
+Mark goes to an ATM and withdraws $50.
+At the same time Jane attempts to withdraw $50.
+
+This is what our code looks like
+
+[source,java]
+----
+@Transactional
+boolean withdraw(String accountNumber, double amount) {
+  double balance = accountService.getBalance(accountNumber);
+  if (balance > amount) {
+    balance -= account;
+    accountService.setBalance(accountNumber, balance);
+    return true;
+  } else {
+    return false;
+  }
+}
+----
+
+++++
+<script>$('#slide-bad-example-1 pre').attr('data-line', '1');</script>
+++++
+
+[NOTE.speaker]
+--
+A lot of text books and tutorials teach transaction management this way.
+Adding `@Transactional` is what they recommend.
+Actually, they teach you to start and stop transactions manually.
+I would have done that, but then it wouldn't fit on a slide.
+
+However, this is not how banks deal with transactions.
+And they've been dealing with transactions since before computers were a thing.
+
+Also I'm using `double` for `amount` instead of using `BigDecimal`.
+This is also to make the slide concise.
+--
+
+=== What banks typically do
+
+image::https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Sparbuch_der_Deutschen_Bundespost_1986%2C_Doppelseite.jpg/2560px-Sparbuch_der_Deutschen_Bundespost_1986%2C_Doppelseite.jpg[size=90%,caption=""]
+
+[.highlighted]
+--
+By Deutsche Bundespost (Scan by User:Mattes) - Scan (700dpi, Millionen Farben), Public Domain
+--
+
+[NOTE.speaker]
+--
+This is what banks typically do.
+I could only find an example in German, but if you're old enough, you've seen one.
+If not, welcome to the 80's.
+And this is not new, it's something banks have done for 100s of years.
+
+The columns we see there are
+
+* timestamp
+* description
+* credit
+* debit
+* balance
+* authorization
+
+This is beautiful.
+
+You can always look at the last line with balance and know how much money you have before writing a check.
+And if you think the transactions don't add up, you can manually check that they've done calculations correctly.
+--
+
+=== But that was _Banking_
+
+[.fragment]
+If you can look at your logs and debug your application, you are already doing that.
+
+[.fragment]
+Banks defined their business model this way hundreds of years ago.
+
+[NOTE.speaker]
+--
+If you are looking at application logs to confirm or deny that there is a bug, you are actually a human that's performing event sourcing on your logs.
+I've done that. Several times.
+
+Banks have trained you to debug their logs.
+It's pure genius.
+Getting the customer who has no access to source code, to debug the application...
+
+If banks can do that, you can do that.
+It could be a little harder, but not impossible.
+But if you succeed at doing that, the benefits are huge.
+--
+
+=== What about my domain?
+
+[cols=3]
+|===
+a| [source,java]
+----
+/* Aggregate */
+class Account {
+  String accountNumber;
+}
+----
+a| [source,java]
+----
+/* Events */
+abstract class Transaction {
+  Account account;
+}
+class AtmWithdrawal
+    extends Transaction {
+  String location;
+  double amount;
+}
+class AtmDeposit
+    extends Transaction {
+  String location;
+  double amount;
+}
+----
+a| [source,java]
+----
+/* Snapshot */
+class AccountSummary {
+  double balance;
+}
+----
+|===
+
+[NOTE.speaker]
+--
+So this is what a bank does.
+You can clearly split this into 3 types of domain classes.
+And if you try to do something similar to your domain, you can get a similar domain model too.
+--
+
+=== What about my domain?
+
+[cols=3]
+|===
+a| [source,java]
+----
+/* Aggregate */
+class Patient {
+  String identifier;
+  String system;
+}
+----
+a| [source,java]
+----
+/* Events */
+abstract class PatientEvent {
+  Patient patient;
+}
+class MedicationPrescribed
+    extends PatientEvent {
+  String code;
+  int quantity;
+}
+class ProcedurePerformed
+    extends PatientEvent {
+  String code;
+}
+----
+a| [source,java]
+----
+/* Snapshot */
+class PatientSummary {
+  List<String> medications;
+  List<String> procedures;
+}
+----
+|===
+
+[NOTE.speaker]
+--
+Here, I've replaced all banking related models with some HealthCare related models.
+--
+
+=== Computing Snapshots
+
+[stem]
+++++
+S_N = f(S_0 , E_1..E_N)
+++++
+
+[cols=">1a,4"]
+|===
+| asciimath:[S_N]        |  Snapshot at Version N
+| asciimath:[S_0]        |  empty snapshot
+| asciimath:[E_1..E_N]   |  events from position 1 through N
+| asciimath:[f]          |  query
+|===
+
+[NOTE.speaker]
+--
+Here's the mathematics that needs to work correctly for Event Sourcing to work.
+
+Let's assume the N-th version of the snapshot is what we want to compute.
+
+The empty snapshot in banking is a zero balance account.
+In our healthcare example, it would be a patient with no medications and no procedures.
+
+We will be applying each event from position 1 through N, one at a time.
+For each event, given the _before_ state of the snapshot, you should be able to compute the _after_ state.
+
+That computation is what we call the _query_.
+--
+
+[background-color="darkred"]
+== But it's not that simple
+
+[NOTE.speaker]
+--
+If you've seen a business checking account, you'll know that it's possible to have hundreds of transactions in a day.
+It's not feasible to keep computing the balance everytime you need to know the snapshot at version N.
+--
+
+=== Incremental Computation
+
+This is what we would like to do
+
+[stem]
+++++
+S_N = f(S_K , E_(K+1)..E_N)
+++++
+
+In Mathematics, it's called the distributive property
+
+[stem]
+++++
+a+b+c = (a+b) +c
+++++
+
+[NOTE.speaker]
+--
+If we've got a partial computation and we can persist it, we would like to reuse it.
+In Mathematics, it's called the distributive property.
+--
+
+[background-color="darkred"]
+=== We're not done yet
+
+There are special events
+
+=== Revert
+
+image::https://rahulsom.github.io/grooves/manual/0.2.0/RevertEvent.svg[]
+
+[.fragment]
+image::https://rahulsom.github.io/grooves/manual/0.2.0/RevertEventEffective.svg[]
+
+[NOTE.speaker]
+--
+Mistakes happen.
+All the time.
+Users might fat finger something on your UI.
+Or another application might have a bug.
+Or you might allow reversal of charges as a business policy.
+
+Regardless of why you do this, you'll want to support reverts.
+In this example, we have events 1-4.
+Then someone realizes that 3 was a mistake.
+You never want to remove 3.
+So what you do is, you create 5 that says, "forget 3 ever happened".
+When computing snapshots the system will behave as if 3 never happened.
+However when auditing the system, it will behave as if 3 and 5 both happened.
+There isn't much value to this when only looking at balances in a bank account.
+However, this can change a whole lot of things when dealing with more complex domains.
+--
+
+=== Revert Again
+
+image::https://rahulsom.github.io/grooves/manual/0.2.0/RevertOnRevert.svg[]
+
+[.fragment]
+image::https://rahulsom.github.io/grooves/manual/0.2.0/RevertOnRevertEffective.svg[]
+
+[NOTE.speaker]
+--
+Any event in your system can be reverted.
+This means that a revert event can also be reverted.
+
+In this example, 6 reverts 5.
+That means 5 cannot revert 3 anymore.
+
+Reverts actually are applied in reverse order.
+That makes things like this possible.
+--
+
+=== Merge/Deprecate
+
+image::https://rahulsom.github.io/grooves/manual/0.2.0/MergeAggregates.svg[]
+
+[.fragment]
+image::https://rahulsom.github.io/grooves/manual/0.2.0/MergeAggregatesEffective.svg[]
+
+[NOTE.speaker]
+--
+In some domains, it's uncommon to create a new aggregate in a hurry.
+In Healthcare, for example, it is extremely common.
+It's more important to provide healthcare than it is to find the right record and keep your database clean.
+
+So in our example now we have 2 aggregates that actually represent the same patient.
+Once we realize that it's the same person, we need to convince the system to sort out the timeline and remove the duplicate.
+
+6 tells you that Freddie is deprecated by the long standing record of Farrokh.
+7 tells you that when computing Farrokh's snapshot, you should pay attention to events in Freddie's timeline as well.
+--
+
+=== Reverting a Merge
+
+image::https://rahulsom.github.io/grooves/manual/0.2.0/RevertMergeBefore.svg[]
+
+[.fragment]
+image::https://rahulsom.github.io/grooves/manual/0.2.0/RevertMergeAfter.svg[]
+
+[NOTE.speaker]
+--
+Oh, and these events can be merged too.
+You want to be careful enough to revert both events at the same time.
+--
+
+[background-color="darkred"]
+== Bad Example 2
+
+[cols="1a,1a"]
+|===
+|Employee
+[cols=">,<,>",options="header"]
+!===
+!ID  ! EMP_NAME  ! DEPT_ID
+!1   ! Mr Spock  ! 1
+!2   ! Scotty    ! 2
+!3   ! Kirk      ! 3
+!4   ! Janeway   ! 3
+!5   ! La Forge  ! 2
+!===
+|Department
+[cols=">,<",options="header"]
+!===
+!ID ! DEPT_NAME
+!1  ! Science
+!2  ! Engineering
+!3  ! Command
+!===
+|===
+
+[NOTE.speaker]
+--
+Here's another textbook example that I think is bad.
+Here's your favorite star trek characters and their departments shown in our tables.
+We are using a foreign key to point us to the right department.
+
+This does not always work correctly.
+Let's look how we would solve this in an event sourced system for a simple case first.
+--
+
+=== Joins in Event Sourcing
+
+image::https://rahulsom.github.io/grooves/manual/0.2.0/JoinExample.svg[]
+
+[NOTE.speaker]
+--
+Scotty is more of a one trick pony.
+So all we need is an event in Scotty's timeline that tells us he's now in Engineering.
+And another in Engineering's timeline that tells Scotty has joined.
+
+Nothing magical about this.
+--
+
+=== Disjoins too
+
+image::https://rahulsom.github.io/grooves/manual/0.2.0/DisjoinExample.svg[]
+
+[NOTE.speaker]
+--
+Mr Spock on the other hand, is very special.
+He started off as a Science officer.
+Then he became Captain.
+In one episode, he was an admiral.
+The Star Trek wiki tells me he's now Federation Ambassador.
+
+When he moved from Science to Command, our textbook example would stop working.
+We need to preserve this information in a usable way.
+--
+
+== Grooves Domain Objects
+
+=== Aggregates
+
+[source,java]
+----
+public class Patient implements AggregateType<Long> {
+    private Long id;
+    private String uniqueId;
+}
+----
+
+[NOTE.speaker]
+--
+This assumes your natural id is separate from your primary key.
+
+If you don't need a separate natural id, good for you.
+All you need then is the `id`.
+
+The type of `id` goes into the generic type param of `AggregateType`.
+--
+
+=== Events
+
+[source,java]
+----
+public abstract class PatientEvent implements
+        BaseEvent<Long, Patient, Long, PatientEvent> {
+    private Patient aggregate;
+    private Long id;
+    private String createdBy;
+    private RevertEvent<Long, Patient, Long, PatientEvent> revertedBy;
+    private Date timestamp;
+    private Long position;
+
+    @Override
+    @NotNull
+    public Observable<Patient> getAggregateObservable() {
+        return aggregate != null ? just(aggregate) : empty();
+    }
+}
+----
+
+[NOTE.speaker]
+--
+This is a base class for all events that we'll be applying on `Patient`.
+All these properties are required to make Grooves happy.
+
+`createdBy` is where we'll put in some information on the authorization.
+
+`revertedBy` is going to be transient from a database perspective.
+That will allow us to build an audit ui that tells us why a certain event was reverted.
+It will point to a Revert Event.
+
+`timestamp` and `position` are going to help us work with a timeline.
+Sometimes we need to look at the time of an event.
+Sometimes we just care about the position of an event.
+
+The position is interesting, in that it could be global, or it could be specific to an aggregate.
+
+If you make it global, you can answer questions about the state of the whole system.
+That works a bit like SVN used to work for versioning code.
+
+If you make it local, then it works more locally, but it can then be used for optimistic locking.
+You can try to do optimistic locking with global positioning, but the effects on scalability might not be good.
+
+You'll notice that the type params are already getting long, and they will continue to get longer as we work on queries.
+So I'll skip type parameters occasionally here.
+If you end up using grooves, the documentation will guide you on them.
+--
+
+=== Real Events
+
+[source,java]
+----
+public class PatientCreated extends PatientEvent {
+    private String name;
+}
+----
+
+[NOTE.speaker]
+--
+This is our first real event.
+All this does for us is let us set the name for the patient at the time of creation.
+--
+
+=== Special Events
+
+[source,java]
+----
+public class PatientEventReverted
+        extends PatientEvent
+        implements RevertEvent<Long, Patient, Long, PatientEvent> {
+    private Long revertedEventId;
+}
+----
+
+[NOTE.speaker]
+--
+At some point you will want to support the special events.
+We'll take revert as an example.
+Each special event has its own interface, and demands some properties be there.
+Some properties will replace the getter with RxJava Observables.
+--
+
+=== Snapshots
+
+[source,java]
+----
+public class PatientAccount
+        implements JavaSnapshot<Long, Patient, Long, Long, PatientEvent>,
+        Serializable {
+    private Long id;
+    private Patient aggregate;
+    private Patient deprecatedBy;
+    private List<Patient> deprecates = new ArrayList<>();
+    private Long lastEventPosition;
+    private Date lastEventTimestamp;
+
+    private String name;
+    private BigDecimal balance = new BigDecimal(0);
+    private BigDecimal moneyMade = new BigDecimal(0);
+
+    public Observable<Patient> getAggregateObservable() {
+        return just(aggregate);
+    }
+
+    public Observable<Patient> getDeprecatedByObservable() {
+        return just(deprecatedBy);
+    }
+
+    public Observable<Patient> getDeprecatesObservable() {
+        return from(deprecates);
+    }
+}
+----
+
+++++
+<script>$('#slide-snapshots pre').attr('data-line', '11-13');</script>
+++++
+
+[NOTE.speaker]
+--
+In this case, we're looking at a snapshot of a patient that will tell us how much is owed by the patient, and how much money has been made.
+Pretty simple: The highlighted portions show us those properties.
+The rest is to make Grooves happy.
+
+`deprecatedBy` tells you if the aggregate that this snapshot represents has been deprecated by another aggregate.
+Think of the Freddie Mercury and Farokh Bulsara example.
+
+`deprecates` tells you of all the aggregates that were deprecated by the aggregate of this snapshot.
+That helps you look up the deprecated ones to see if you need to include any event in your computation.
+
+If you're just computing bank balances, it's easy.
+If you're doing something complex like looking at multiple medications and deciding if something needs to be done for a patient, you can't take shortcuts.
+--
+
+== Grooves Queries
+
+[NOTE.speaker]
+--
+Next up, lets look at what it takes to write a query.
+In our mathematical representation, it was a simple function called `f`.
+--
+
+=== Satisfying grooves
+
+[source,java]
+----
+public class PatientAccountQuery<...> extends QuerySupport<...> {
+    ...
+}
+----
+
+Could also be `VersionedQuerySupport` or `TemporalQuerySupport`
+
+[NOTE.speaker]
+--
+I'm assuming for this part that you might do either kind of query, i.e. by timestamp or by position.
+The position is only for events. Once it becomes a snapshot, we'll call it a version.
+
+If you know that you'll only do one kind, you could reduce how much code you need to write.
+--
+
+=== Fetching snapshots
+
+[source,java]
+----
+    @Override
+    public PatientAccount createEmptySnapshot() {
+        return new PatientAccount();
+    }
+
+    @Override
+    public Observable<PatientAccount> getSnapshot(
+            long maxPosition, Patient aggregate) {
+        ...
+    }
+
+    @Override
+    public Observable<PatientAccount> getSnapshot(
+            Date maxTimestamp, Patient aggregate) {
+        ...
+    }
+----
+
+[NOTE.speaker]
+--
+First off we'll have to get the query to be able to do 3 things
+
+* Produce an empty snapshot; this is like a zero balance account in banking, or a patient with no medications or procedures in our case.
+* Find a snapshot that was computed and persisted earlier in the database.
+ ** This could be done by a max position, i.e. find a snapshot older or equal to the desired version.
+ That way we can optionally add more events to it.
+ ** Or it could be done by a max timestamp. Same thing more or less.
+--
+
+=== Fetching events
+
+[source,java]
+----
+    @Override
+    public Observable<PatientEvent> getUncomputedEvents(
+            Patient aggregate, PatientAccount lastSnapshot, long version) {
+
+    }
+
+    @Override
+    public Observable<PatientEvent> getUncomputedEvents(
+            Patient aggregate, PatientAccount lastSnapshot, Date snapshotTime) {
+
+    }
+----
+
+[NOTE.speaker]
+--
+Next up, we'll find events that occur between a previous snapshot, and the desired version or timestamp.
+Once we find these events, we can then apply them one after another.
+--
+
+=== Handling errors
+
+[source,java]
+----
+    @Override
+    default Observable<EventApplyOutcome> onException(
+            Exception e, PatientAccount snapshot, PatientEvent event) {
+        getLog().error("Error computing snapshot", e);
+        return just(CONTINUE);
+    }
+----
+
+[NOTE.speaker]
+--
+Sometimes your code can throw exceptions.
+If it does, we need a place to catch these exceptions and decide what to do.
+We might just take the simplest path and log the exception and abort the computation for this snapshot.
+
+Or, you could collect all the exceptions, and then present them to the user in a simpler form.
+This way, you can tell the user that you tried to do your best, but that wasn't good enough.
+
+So, though you can present them with a snapshot, they should take it with a grain of salt.
+
+You might not want to do that for a financial transaction, but if you're doing something for healthcare, this is much better than an error message.
+The doctor can look your condition, and the warning, and then ask the patient, "Hey, you've got high blood pressure, but I don't see your blood pressure medication. Are you taking one? Let me fix the record here..."
+--
+
+=== Processing events
+
+For languages like Java, Groovy
+
+[source,java]
+----
+    public Observable<EventApplyOutcome> applyPatientCreated(
+            PatientCreated event, PatientAccount snapshot) {
+        if (snapshot.getAggregate() == event.getAggregate()) {
+            snapshot.setName(event.getName());
+        }
+        return just(CONTINUE);
+    }
+
+    ...
+----
+
+[NOTE.speaker]
+--
+So we're going to assume your jvm language is very much like java.
+This works for groovy too.
+
+You can write a method based on the event name that applies the event to a snapshot.
+Then it returns the outcome in an observable.
+
+This needs to be done only for user events.
+Special events will not come here at all, which makes sense.
+The reason those events are special is they can be made to work in any domain.
+What good is a library if it doesn't handle those for you.
+
+It's a bit of a problem, in that your compiler won't tell you if you've covered all event types.
+--
+
+=== Processing events
+
+For languages with case classes
+
+[source,kotlin]
+----
+    override fun applyEvent(
+        event: PatientEvent.Applicable, snapshot: PatientAccount) =
+            when (event) {
+                is PatientEvent.Applicable.Created -> {
+                    // Your logic here
+                    just(CONTINUE)
+                }
+                is PatientEvent.Applicable.ProcedurePerformed -> {
+                    // Your logic here
+                    just(CONTINUE)
+                }
+                is PatientEvent.Applicable.PaymentMade -> {
+                    // Your logic here
+                    just(CONTINUE)
+                }
+            }
+----
+
+[NOTE.speaker]
+--
+If you're using something like kotlin or scala, where you've got case classes or sealed classes, you can do this.
+This example is in Kotlin, and uses a when statement as a method expression.
+
+Now the compiler will error out if you miss out on some subclass of your events.
+--
+
+=== Events
+
+For languages with case classes
+
+[source,kotlin]
+----
+sealed class PatientEvent : BaseEvent<..> {
+    // Properties and methods from equivalent java class
+
+    sealed class Applicable : PatientEvent() {
+        data class Created(val name: String) : Applicable()
+        data class ProcedurePerformed(
+                val code: String, val cost: Double) : Applicable()
+        ..
+    }
+
+    data class Reverted(override val revertedEventId: String) :
+            PatientEvent(), RevertEvent<..>
+}
+----
+
+[NOTE.speaker]
+--
+Of course, you need to write your events using sealed classes.
+This is great for Kotlin and Scala.
+But what about Java and Groovy?
+--
+
+=== Completeness for Java
+
+...and Groovy.
+
+[source,java]
+----
+@Aggregate public class Patient {...}
+public abstract class PatientEvent {}
+
+@Event(Patient.class)
+public class ProcedurePerformed extends PatientEvent {}
+@Event(Patient.class)
+public class PaymentMade extends PatientEvent {}
+
+@Query(aggregate=Patient.class, snapshot=PatientAccount.class)
+public class PatientAccountQuery {
+    ...
+    Observable<EventApplyOutcome> applyProcedurePerformed() {...}
+    Observable<EventApplyOutcome> applyPaymentMade() {...}
+}
+----
+
+[NOTE.speaker]
+--
+Java as well as groovy allow you to customize compilation a little bit.
+
+Java uses Annotation Processors, Groovy uses AST Transformations.
+
+With a few annotations, you can verify completeness at compile time.
+
+Downsides? IDE support. Custom plugins?
+--
+
+== Gotchas
+
+[NOTE.speaker]
+--
+This is my favorite part of this presentation.
+
+Some of these are things I wish I knew before I started exploring this space.
+--
+
+[background-image="http://www.vosizneias.com/wp-content/uploads/2013/01/h_50493197.jpg"]
+[%notitle]
+=== Lance One
+
+[.highlighted]#How many Tour de France General Classification Tour victories did this guy have on 2007-10-01?#
+
+[NOTE.speaker]
+--
+Before we go into details, does anyone want to answer the question?
+--
+
+=== Lance Armstrong
+
+[cols="1a,1a"]
+|===
+|[cols="1,2a"]
+!===
+!1992!Joins Motorola
+!1993!DNF
+!1994!DNF
+!1995!36
+!1996!DNF
+!1996-10-02!Diagnosed with Cancer
+!1997-02!Declared cancer free
+!1998!Joins US Postal
+!1999!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
+!2000!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
+!2001!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
+!===
+
+|[cols="1,2a"]
+!===
+!2002!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
+!2003!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
+!2004!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
+!2005!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
+!2005!Retires
+!2009!Returns from retirement
+!2009!3
+!2010!23
+!2010!Retires
+!2012-10!Stripped of all wins from 1998 through 2010
+!===
+|===
+
+[background-image="http://www.vosizneias.com/wp-content/uploads/2013/01/h_50493197.jpg"]
+[%notitle]
+=== Lance Two
+
+[cols="3a,2,>3a"]
+|===
+|[.highlighted]#1. Based on what we knew in 2007, How many TdF GC Tour victories did he have on 2007-10-01?#
+|
+|[.highlighted]#2. Based on what we know in 2017, How many TdF GC Tour victories did he have on 2007-10-01?#
+
+|===
+
+[.fragment]
+[.highlighted]#Asking the right question is key#
+
+=== Advice on handling data
+
+* Be very careful about what your events look like.
+* Don't worry much about what your snapshots look like.
+
+[.to-top]
+=== Communication is key
+
+++++
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">95% of the cost of event sourcing projects is explaining event sourcing</p>&mdash; Scott Bellware (@sbellware) <a href="https://twitter.com/sbellware/status/873723025472016384">June 11, 2017</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+++++
+
+[.bottom]
+Having detailed documentation on what your aggregates, events and snapshots are, really helps.
+
+=== Non Event Sources of data
+
+When the intent of the user is not clear from the datasource.
+
+[background-image="https://www.fluentin3months.com/wp-content/uploads/2016/01/goldilocks_2.jpg"]
+=== !
+
+== Thank you
+
+[cols=">1,<4"]
+|===
+|Slidedeck | https://github.com/rahulsom/javaone-2017-eventsourcing[rahulsom/javaone-2017-eventsourcing]
+|Grooves   | https://github.com/rahulsom/grooves[rahulsom/grooves]
+|===
+
+[id="otherTalks", cols=">3,<2,<9"]
+|===
+| Sun 15:00 | *CON7610* | Microservices Data Patterns: CQRS and ES
+| Mon 16:30 | *CON2526* | Reactive Stream Processing with Swarm and Kafka
+| Mon 17:30 | *CON7474* | ES, Distributed Systems, and CQRS with Java EE
+| Tue 13:15 | *CON4083* | Async by Default, Synchronous When Necessary
+| Wed 14:45 | *CON4277* | Three µS Patterns to Tear Down Your Monoliths
+|===

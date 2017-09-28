@@ -1,0 +1,64 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'io.ratpack:ratpack-groovy-test:1.3.3'
+    }
+
+}
+configurations {
+    pdf
+}
+repositories {
+    jcenter()
+}
+dependencies {
+    pdf 'me.champeau.deck2pdf:deck2pdf:0.3.0'
+}
+
+task export(type: Zip) {
+    from "$buildDir/asciidoc/revealjs/png"
+    destinationDir = file("$buildDir/asciidoc/revealjs")
+    version = null
+}
+
+
+import ratpack.groovy.test.embed.GroovyEmbeddedApp
+import java.nio.file.Paths
+
+
+["pdf", /*"jpeg", */"png"].each { type ->
+    def gentask = task "generate${type.capitalize()}"(type: JavaExec) {
+        dependsOn asciidoctor
+
+        GroovyEmbeddedApp app = null
+
+        inputs.file("$workingDir/index.html")
+        outputs.files("$workingDir/$type")
+
+        doFirst {
+            file("$workingDir/$type").mkdirs()
+            app = GroovyEmbeddedApp.of {
+                serverConfig {
+                    port 8080
+                    baseDir(Paths.get("$workingDir"))
+                }
+                handlers {
+                    files()
+                }
+            }
+            app.server.start()
+        }
+
+        main = 'me.champeau.deck2pdf.Main'
+        workingDir = file("$buildDir/asciidoc/revealjs")
+        args = ['http://localhost:8080/index.html', "${type}/${project.name}.$type", '--profile=revealjs']
+        classpath = configurations.pdf
+
+        doLast {
+            app.close()
+        }
+    }
+    export.dependsOn(gentask)
+}

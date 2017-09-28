@@ -1,0 +1,21 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.ajoberstar:gradle-git-publish:0.3.0'
+    }
+}
+
+apply plugin: org.ajoberstar.gradle.git.publish.GitPublishPlugin
+
+gitPublish {
+    repoUri = 'https://github.com/rahulsom/javaone-2017-eventsourcing.git'
+    branch = 'gh-pages'
+
+    contents {
+        from 'build/asciidoc/revealjs'
+    }
+}
+
+gitPublishCopy.dependsOn 'export'

@@ -1,0 +1,16 @@
+language: groovy
+script: rm -rf build && ./gradlew gitPublishPush --stacktrace
+jdk:
+- oraclejdk8
+cache:
+  directories:
+  - "$HOME/.m2"
+  - "$HOME/.gradle/wrapper"
+  - "$HOME/.gradle/caches"
+before_script:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
+env:
+  global:
+    secure: QC9NDZ/fR+18URqBUYEZUIdKqVTjvCPd2GGujDReG02Q75h4rngqMPLz1XzDTDRYKVas/Iwr2HfHjcs8ps9E9j1bu1F7vLQXoj9WQ4wbmC0j+6YRwlbc8DwmTd73DYGIvkz6yQB4dXnuXJ1m8bIHLUMWUAdg3p+tC/VXuhZPiWwFe9f+uGVCFQniPO7OOeCf18bmLOMorfDsVA/UF++/fmMXA6mXvl9dSVjX2hgQx1P5BqzMKBsPE8oCeFKrpM1tVxT7t48obnPKAquHT5aloI1gl1wqi0JToLso1b7svTShBT4iWYbPkDBg4SD7wTkkzrdsNCWGz+59S1xnwEny+8SMfp5HilvNVIqGeFPzLdBbvSm2CEj1X16QyAWypDZ0wL9RdKCnlvF5v2wCi+VgBCaMifbrpq3P1nltXqmlf4Ri4QwoGMZH+BpUhlQG2H+Gt82Twudslu85Rt7QWevfQjXaLgmIFBVGWaFNdhbae6S14SnlP6gwiiFeQ2EWQaCf2nHuN5vbaRJ2RuSNlk3V7OKAh+orGjIkh14SehIPXU2h0lIE1x08B+D/UWfnBg08j+XvipMSUfIKtDslFLAB/u2JxOuXtr3Gbwyd2RCzqZKi95jvovrYcmu+D9P3mGqYTDwfdecQZZ75mjvbIQ8aDL6R8IsVaMlo8NMIVp5v47Q=

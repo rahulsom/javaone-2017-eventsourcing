@@ -1,0 +1,118 @@
+buildscript {
+    dependencies {
+        classpath 'commons-httpclient:commons-httpclient:3.1'
+    }
+}
+
+plugins {
+    id 'org.asciidoctor.convert' version '1.5.3'
+    id 'com.github.jruby-gradle.base' version '1.4.0'
+    id 'org.ysb33r.vfs' version '1.0'
+    id 'org.kordamp.gradle.livereload' version '0.2.1'
+    id "org.ajoberstar.grgit" version "2.0.1"
+    id 'java'
+    id "it.tellnet.sass" version "1.2"
+}
+
+apply from: 'gradle/pdf.gradle'
+apply from: 'gradle/publish.gradle'
+
+version = '1.0.0-SNAPSHOT'
+
+ext {
+    revealjsVersion = '3.3.0'
+    asciidoctorBackendVersion = 'ccc1e91cea9d99a76bee64777604973efa4d348b'
+    downloadDir = new File(buildDir, 'download')
+    templateDir = new File(downloadDir, 'templates')
+    revealjsDir = new File(downloadDir, 'reveal.js')
+}
+
+repositories {
+    jcenter()
+    maven { url 'http://rubygems-proxy.torquebox.org/releases' }
+}
+
+dependencies {
+    gems 'rubygems:slim:3.0.8'
+    gems 'rubygems:thread_safe:0.3.5'
+
+    asciidoctor 'com.github.rahulsom:grooves-diagrams:0.2.0'
+
+}
+
+task download {
+    doLast {
+        mkdir downloadDir
+        vfs {
+            cp "zip:https://github.com/asciidoctor/asciidoctor-reveal.js/archive/${asciidoctorBackendVersion}.zip!asciidoctor-reveal.js-${asciidoctorBackendVersion}",
+                    templateDir, recursive: true, overwrite: true
+            cp "zip:https://github.com/hakimel/reveal.js/archive/${revealjsVersion}.zip!reveal.js-${revealjsVersion}",
+                    revealjsDir, recursive: true, overwrite: true
+        }
+
+    }
+}
+
+download {
+    description "Download extra revealjs resources"
+    outputs.dir templateDir
+    outputs.dir revealjsDir
+}
+
+asciidoctorj {
+    version = '1.5.5'
+}
+
+asciidoctor {
+    dependsOn jrubyPrepare, download
+    sources {
+        include 'index.adoc'
+    }
+    resources {
+        from(new File(sourceDir, "styles")) {
+            include '**'
+            into './reveal.js/css/theme/source'
+        }
+        from(sourceDir) {
+            include 'images/**'
+            include 'snippets/**'
+            include 'scripts/**'
+        }
+        from(downloadDir) {
+            include 'reveal.js/**'
+        }
+    }
+
+    backends 'revealjs'
+
+    attributes   \
+        'build-gradle': file('build.gradle'),
+            'sourcedir': project.sourceSets.main.java.srcDirs[0],
+            'endpoint-url': 'http://example.org',
+            'imagesdir': './images',
+            'imagesoutdir': 'images',
+            'toc': 'left',
+            'icons': 'font',
+            'setanchors': '',
+            'idprefix': 'slide-',
+            'idseparator': '-',
+            'docinfo1': '',
+            'revealjs_theme': 'custom',
+            'revealjs_transition': 'linear',
+            'revealjs_history': 'true',
+            'revealjs_slideNumber': 'true'
+
+    options template_dirs: [new File(templateDir, 'templates/slim').absolutePath]
+}
+
+liveReload {
+    docRoot asciidoctor.outputDir.canonicalPath
+}
+
+sass {
+    sassDir = "$buildDir/asciidoc/revealjs/reveal.js/css/theme/source"
+    cssDir = "$buildDir/asciidoc/revealjs/reveal.js/css/theme"
+}
+
+tasks.findByName('sassCompile').dependsOn 'asciidoctor'
+asciidoctor.finalizedBy 'sassCompile'

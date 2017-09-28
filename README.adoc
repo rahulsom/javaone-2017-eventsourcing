@@ -1,0 +1,20 @@
+= JavaOne 2017 EventSourcing
+
+Slides for my talk at that event on that topic.
+
+== Viewing the slidedeck
+
+[cols=3]
+|===
+|https://rahulsom.github.io/javaone-2017-eventsourcing/[html]
+|https://rahulsom.github.io/javaone-2017-eventsourcing/pdf/javaone-2017-eventsourcing.pdf[pdf]
+|https://rahulsom.github.io/javaone-2017-eventsourcing/javaone-2017-eventsourcing.zip[png]
+|===
+
+== Editing the slidedeck
+
+Start with `index.adoc` in `src/docs/asciidoc`.
+
+To turn that into html, run `./gradlew asciidoctor` and look at `build/asciidoc/revealjs/index.html`.
+
+To generate pdf or pngs, run `./gradlew export`.
