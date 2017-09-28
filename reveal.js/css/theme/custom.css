@@ -705,3 +705,7 @@ section[data-background-image] .attribution {
 #slide-lance-one .highlighted {
 	margin-top: 30%;
 }
+
+#slide-goldilocks .attribution {
+	bottom: 0em !important;
+}
