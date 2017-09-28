@@ -18,7 +18,7 @@ If you have a question, feel free to grab my attention; I'll do my best to answe
 * Wanted Event Sourcing in 2016
 * Didn't like anything I saw
 * Built my own thing - Grooves
-* I solve problems in HealthCare
+* I solve problems in Health Care
 
 [NOTE.speaker]
 --
@@ -32,28 +32,16 @@ Unfortunately, nothing worked for my specific problems.
 So I did the next best thing - I wrote my own solution.
 This talk will use that in examples, but most ideas are transferrable to other libraries.
 
-Also, I work in HealthCare.
+Also, I work in Health Care.
 That probably explains #2 on the list.
---
-
-=== What's wrong with other tools
-
-image::Trump.png[]
-
-[NOTE.speaker]
---
-I don't really blame the developers of other libraries.
-If you work in HealthCare and want to trash talk the standards in HealthCare, find me after the talk.
 --
 
 == Where I work
 
 image::BoxCutter.png[height="300em"]
 
-Used by 70+ Health Systems,
-        1.4k Locations,
-        8.5k Physicians.
-
+[.small]
+Transcend Insights® empowers population health management with The Platform Above—technology that rises above the data silos and connects care teams with the insights they need to succeed in a value-based care world.
 
 [NOTE.speaker]
 --
@@ -173,11 +161,12 @@ This is also to make the slide concise.
 
 === What banks typically do
 
-image::https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Sparbuch_der_Deutschen_Bundespost_1986%2C_Doppelseite.jpg/2560px-Sparbuch_der_Deutschen_Bundespost_1986%2C_Doppelseite.jpg[size=90%,caption=""]
+image::https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Sparbuch_der_Deutschen_Bundespost_1986%2C_Doppelseite.jpg/2560px-Sparbuch_der_Deutschen_Bundespost_1986%2C_Doppelseite.jpg[size=90%]
 
-[.highlighted]
+[.highlighted.attribution]
 --
 By Deutsche Bundespost (Scan by User:Mattes) - Scan (700dpi, Millionen Farben), Public Domain
+https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Sparbuch_der_Deutschen_Bundespost_1986%2C_Doppelseite.jpg/2560px-Sparbuch_der_Deutschen_Bundespost_1986%2C_Doppelseite.jpg[Wikimedia]
 --
 
 [NOTE.speaker]
@@ -308,7 +297,7 @@ class PatientSummary {
 
 [NOTE.speaker]
 --
-Here, I've replaced all banking related models with some HealthCare related models.
+Here, I've replaced all banking related models with some Health Care related models.
 --
 
 === Computing Snapshots
@@ -333,7 +322,7 @@ Here's the mathematics that needs to work correctly for Event Sourcing to work.
 Let's assume the N-th version of the snapshot is what we want to compute.
 
 The empty snapshot in banking is a zero balance account.
-In our healthcare example, it would be a patient with no medications and no procedures.
+In our health care example, it would be a patient with no medications and no procedures.
 
 We will be applying each event from position 1 through N, one at a time.
 For each event, given the _before_ state of the snapshot, you should be able to compute the _after_ state.
@@ -432,8 +421,8 @@ image::https://rahulsom.github.io/grooves/manual/0.2.0/MergeAggregatesEffective.
 [NOTE.speaker]
 --
 In some domains, it's uncommon to create a new aggregate in a hurry.
-In Healthcare, for example, it is extremely common.
-It's more important to provide healthcare than it is to find the right record and keep your database clean.
+In Health care, for example, it is extremely common.
+It's more important to provide health care than it is to find the right record and keep your database clean.
 
 So in our example now we have 2 aggregates that actually represent the same patient.
 Once we realize that it's the same person, we need to convince the system to sort out the timeline and remove the duplicate.
@@ -782,7 +771,7 @@ This way, you can tell the user that you tried to do your best, but that wasn't 
 
 So, though you can present them with a snapshot, they should take it with a grain of salt.
 
-You might not want to do that for a financial transaction, but if you're doing something for healthcare, this is much better than an error message.
+You might not want to do that for a financial transaction, but if you're doing something for health care, this is much better than an error message.
 The doctor can look your condition, and the warning, and then ask the patient, "Hey, you've got high blood pressure, but I don't see your blood pressure medication. Are you taking one? Let me fix the record here..."
 --
 
@@ -927,6 +916,9 @@ Some of these are things I wish I knew before I started exploring this space.
 
 [.highlighted]#How many Tour de France General Classification Tour victories did this guy have on 2007-10-01?#
 
+[.highlighted.attribution]
+EPA/JASPER JUINEN, 22 July 2004. Sourced from http://www.vosizneias.com/wp-content/uploads/2013/01/h_50493197.jpg[vosizneias]
+
 [NOTE.speaker]
 --
 Before we go into details, does anyone want to answer the question?
@@ -946,17 +938,17 @@ Before we go into details, does anyone want to answer the question?
 !1996-10-02!Diagnosed with Cancer
 !1997-02!Declared cancer free
 !1998!Joins US Postal
-!1999!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
-!2000!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
-!2001!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
+!1999!image::Jersey_yellow.svg.png[height="20px"]
+!2000!image::Jersey_yellow.svg.png[height="20px"]
+!2001!image::Jersey_yellow.svg.png[height="20px"]
 !===
 
 |[cols="1,2a"]
 !===
-!2002!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
-!2003!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
-!2004!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
-!2005!image::https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[height="20px"]
+!2002!image::Jersey_yellow.svg.png[height="20px"]
+!2003!image::Jersey_yellow.svg.png[height="20px"]
+!2004!image::Jersey_yellow.svg.png[height="20px"]
+!2005!image::Jersey_yellow.svg.png[height="20px"]
 !2005!Retires
 !2009!Returns from retirement
 !2009!3
@@ -965,6 +957,11 @@ Before we go into details, does anyone want to answer the question?
 !2012-10!Stripped of all wins from 1998 through 2010
 !===
 |===
+
+[.highlighted.attribution]
+--
+Jersey images from https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[Wikimedia commons]
+--
 
 [background-image="http://www.vosizneias.com/wp-content/uploads/2013/01/h_50493197.jpg"]
 [%notitle]
@@ -979,7 +976,7 @@ Before we go into details, does anyone want to answer the question?
 |===
 
 [.fragment]
-[.highlighted]#Asking the right question is key#
+[.highlighted]#Ask the right question#
 
 === Advice on handling data
 
@@ -994,15 +991,16 @@ Before we go into details, does anyone want to answer the question?
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 ++++
 
-[.bottom]
-Having detailed documentation on what your aggregates, events and snapshots are, really helps.
-
 === Non Event Sources of data
 
 When the intent of the user is not clear from the datasource.
 
 [background-image="https://www.fluentin3months.com/wp-content/uploads/2016/01/goldilocks_2.jpg"]
-=== !
+[%notitle]
+=== Goldilocks
+
+[.highlighted.attribution]
+The Story of Goldilocks and The Three Bears, Award Publications LTD
 
 == Thank you
 
