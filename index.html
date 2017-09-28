@@ -67,9 +67,12 @@ boolean withdraw(String accountNumber, double amount) {
   }
 }</code></pre></div></div><script>$('#slide-bad-example-1 pre').attr('data-line', '1');</script><aside class="notes"><div class="paragraph"><p>A lot of text books and tutorials teach transaction management this way.
 Adding <code>@Transactional</code> is what they recommend.
-Some teach you to start and stop transactions manually.</p></div>
+Actually, they teach you to start and stop transactions manually.
+I would have done that, but then it wouldn&#8217;t fit on a slide.</p></div>
 <div class="paragraph"><p>However, this is not how banks deal with transactions.
-And they&#8217;ve been dealing with transactions since before computers were a thing.</p></div></aside></section><section id="slide-what-banks-typically-do"><h2>What banks typically do</h2><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Sparbuch_der_Deutschen_Bundespost_1986%2C_Doppelseite.jpg/2560px-Sparbuch_der_Deutschen_Bundespost_1986%2C_Doppelseite.jpg" alt="2560px Sparbuch der Deutschen Bundespost 1986%2C Doppelseite" /></div>
+And they&#8217;ve been dealing with transactions since before computers were a thing.</p></div>
+<div class="paragraph"><p>Also I&#8217;m using <code>double</code> for <code>amount</code> instead of using <code>BigDecimal</code>.
+This is also to make the slide concise.</p></div></aside></section><section id="slide-what-banks-typically-do"><h2>What banks typically do</h2><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Sparbuch_der_Deutschen_Bundespost_1986%2C_Doppelseite.jpg/2560px-Sparbuch_der_Deutschen_Bundespost_1986%2C_Doppelseite.jpg" alt="2560px Sparbuch der Deutschen Bundespost 1986%2C Doppelseite" /></div>
 <div class="openblock highlighted"><div class="content"><div class="paragraph"><p>By Deutsche Bundespost (Scan by User:Mattes) - Scan (700dpi, Millionen Farben), Public Domain</p></div></div></div>
 <aside class="notes"><div class="paragraph"><p>This is what banks typically do.
 I could only find an example in German, but if you&#8217;re old enough, you&#8217;ve seen one.
@@ -201,7 +204,11 @@ We need to preserve this information in a usable way.</p></div></aside></section
 <section><section id="slide-grooves-domain-objects"><h2>Grooves Domain Objects</h2></section><section id="slide-aggregates"><h2>Aggregates</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class Patient implements AggregateType&lt;Long&gt; {
     private Long id;
     private String uniqueId;
-}</code></pre></div></div></section><section id="slide-events"><h2>Events</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public abstract class PatientEvent implements
+}</code></pre></div></div>
+<aside class="notes"><div class="paragraph"><p>This assumes your natural id is separate from your primary key.</p></div>
+<div class="paragraph"><p>If you don&#8217;t need a separate natural id, good for you.
+All you need then is the <code>id</code>.</p></div>
+<div class="paragraph"><p>The type of <code>id</code> goes into the generic type param of <code>AggregateType</code>.</p></div></aside></section><section id="slide-events"><h2>Events</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public abstract class PatientEvent implements
         BaseEvent&lt;Long, Patient, Long, PatientEvent&gt; {
     private Patient aggregate;
     private Long id;
@@ -215,32 +222,36 @@ We need to preserve this information in a usable way.</p></div></aside></section
     public Observable&lt;Patient&gt; getAggregateObservable() {
         return aggregate != null ? just(aggregate) : empty();
     }
-}</code></pre></div></div></section><section id="slide-real-events"><h2>Real Events</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class PatientCreated extends PatientEvent {
+}</code></pre></div></div>
+<aside class="notes"><div class="paragraph"><p>This is a base class for all events that we&#8217;ll be applying on <code>Patient</code>.
+All these properties are required to make Grooves happy.</p></div>
+<div class="paragraph"><p><code>createdBy</code> is where we&#8217;ll put in some information on the authorization.</p></div>
+<div class="paragraph"><p><code>revertedBy</code> is going to be transient from a database perspective.
+That will allow us to build an audit ui that tells us why a certain event was reverted.
+It will point to a Revert Event.</p></div>
+<div class="paragraph"><p><code>timestamp</code> and <code>position</code> are going to help us work with a timeline.
+Sometimes we need to look at the time of an event.
+Sometimes we just care about the position of an event.</p></div>
+<div class="paragraph"><p>The position is interesting, in that it could be global, or it could be specific to an aggregate.</p></div>
+<div class="paragraph"><p>If you make it global, you can answer questions about the state of the whole system.
+That works a bit like SVN used to work for versioning code.</p></div>
+<div class="paragraph"><p>If you make it local, then it works more locally, but it can then be used for optimistic locking.
+You can try to do optimistic locking with global positioning, but the effects on scalability might not be good.</p></div>
+<div class="paragraph"><p>You&#8217;ll notice that the type params are already getting long, and they will continue to get longer as we work on queries.
+So I&#8217;ll skip type parameters occasionally here.
+If you end up using grooves, the documentation will guide you on them.</p></div></aside></section><section id="slide-real-events"><h2>Real Events</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class PatientCreated extends PatientEvent {
     private String name;
-
-    @Override
-    public String getAudit() {
-        return "name: " + name;
-    }
-
-    public PatientCreated(String name) {
-        this.name = name;
-    }
-}</code></pre></div></div></section><section id="slide-special-events"><h2>Special Events</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class PatientEventReverted
+}</code></pre></div></div>
+<aside class="notes"><div class="paragraph"><p>This is our first real event.
+All this does for us is let us set the name for the patient at the time of creation.</p></div></aside></section><section id="slide-special-events"><h2>Special Events</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class PatientEventReverted
         extends PatientEvent
         implements RevertEvent&lt;Long, Patient, Long, PatientEvent&gt; {
     private Long revertedEventId;
-
-    @Override
-    public Long getRevertedEventId() {
-        return revertedEventId;
-    }
-
-    @Override
-    public String getAudit() {
-        return "revertedEvent:" + revertedEventId;
-    }
-}</code></pre></div></div></section><section id="slide-snapshots"><h2>Snapshots</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class PatientAccount
+}</code></pre></div></div>
+<aside class="notes"><div class="paragraph"><p>At some point you will want to support the special events.
+We&#8217;ll take revert as an example.
+Each special event has its own interface, and demands some properties be there.
+Some properties will replace the getter with RxJava Observables.</p></div></aside></section><section id="slide-snapshots"><h2>Snapshots</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class PatientAccount
         implements JavaSnapshot&lt;Long, Patient, Long, Long, PatientEvent&gt;,
         Serializable {
     private Long id;
@@ -266,11 +277,24 @@ We need to preserve this information in a usable way.</p></div></aside></section
         return from(deprecates);
     }
 }</code></pre></div></div>
-<script>$('#slide-snapshots pre').attr('data-line', '11-13');</script></section></section>
-<section><section id="slide-grooves-queries"><h2>Grooves Queries</h2></section><section id="slide-satisfying-grooves"><h2>Satisfying grooves</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class PatientAccountQuery&lt;...&gt; extends QuerySupport&lt;...&gt; {
+<script>$('#slide-snapshots pre').attr('data-line', '11-13');</script>
+<aside class="notes"><div class="paragraph"><p>In this case, we&#8217;re looking at a snapshot of a patient that will tell us how much is owed by the patient, and how much money has been made.
+Pretty simple: The highlighted portions show us those properties.
+The rest is to make Grooves happy.</p></div>
+<div class="paragraph"><p><code>deprecatedBy</code> tells you if the aggregate that this snapshot represents has been deprecated by another aggregate.
+Think of the Freddie Mercury and Farokh Bulsara example.</p></div>
+<div class="paragraph"><p><code>deprecates</code> tells you of all the aggregates that were deprecated by the aggregate of this snapshot.
+That helps you look up the deprecated ones to see if you need to include any event in your computation.</p></div>
+<div class="paragraph"><p>If you&#8217;re just computing bank balances, it&#8217;s easy.
+If you&#8217;re doing something complex like looking at multiple medications and deciding if something needs to be done for a patient, you can&#8217;t take shortcuts.</p></div></aside></section></section>
+<section><section id="slide-grooves-queries"><h2>Grooves Queries</h2><aside class="notes"><div class="paragraph"><p>Next up, lets look at what it takes to write a query.
+In our mathematical representation, it was a simple function called <code>f</code>.</p></div></aside></section><section id="slide-satisfying-grooves"><h2>Satisfying grooves</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class PatientAccountQuery&lt;...&gt; extends QuerySupport&lt;...&gt; {
     ...
 }</code></pre></div></div>
-<div class="paragraph"><p>Could also be <code>VersionedQuerySupport</code> or <code>TemporalQuerySupport</code></p></div></section><section id="slide-fetching-snapshots"><h2>Fetching snapshots</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    @Override
+<div class="paragraph"><p>Could also be <code>VersionedQuerySupport</code> or <code>TemporalQuerySupport</code></p></div>
+<aside class="notes"><div class="paragraph"><p>I&#8217;m assuming for this part that you might do either kind of query, i.e. by timestamp or by position.
+The position is only for events. Once it becomes a snapshot, we&#8217;ll call it a version.</p></div>
+<div class="paragraph"><p>If you know that you&#8217;ll only do one kind, you could reduce how much code you need to write.</p></div></aside></section><section id="slide-fetching-snapshots"><h2>Fetching snapshots</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    @Override
     public PatientAccount createEmptySnapshot() {
         return new PatientAccount();
     }
@@ -285,7 +309,10 @@ We need to preserve this information in a usable way.</p></div></aside></section
     public Observable&lt;PatientAccount&gt; getSnapshot(
             Date maxTimestamp, Patient aggregate) {
         ...
-    }</code></pre></div></div></section><section id="slide-fetching-events"><h2>Fetching events</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    @Override
+    }</code></pre></div></div>
+<aside class="notes"><div class="paragraph"><p>First off we&#8217;ll have to get the query to be able to do 3 things</p></div>
+<div class="ulist"><ul><li><p>Produce an empty snapshot; this is like a zero balance account in banking, or a patient with no medications or procedures in our case.</p></li><li><p>Find a snapshot that was computed and persisted earlier in the database.</p><div class="ulist"><ul><li><p>This could be done by a max position, i.e. find a snapshot older or equal to the desired version.
+That way we can optionally add more events to it.</p></li><li><p>Or it could be done by a max timestamp. Same thing more or less.</p></li></ul></div></li></ul></div></aside></section><section id="slide-fetching-events"><h2>Fetching events</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    @Override
     public Observable&lt;PatientEvent&gt; getUncomputedEvents(
             Patient aggregate, PatientAccount lastSnapshot, long version) {
 
@@ -295,15 +322,22 @@ We need to preserve this information in a usable way.</p></div></aside></section
     public Observable&lt;PatientEvent&gt; getUncomputedEvents(
             Patient aggregate, PatientAccount lastSnapshot, Date snapshotTime) {
 
-    }</code></pre></div></div></section><section id="slide-stopping-computations-early"><h2>Stopping computations early</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    @Override
-    default boolean shouldEventsBeApplied(PatientAccount snapshot) {
-        return true;
-    }</code></pre></div></div></section><section id="slide-handling-errors"><h2>Handling Errors</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    @Override
+    }</code></pre></div></div>
+<aside class="notes"><div class="paragraph"><p>Next up, we&#8217;ll find events that occur between a previous snapshot, and the desired version or timestamp.
+Once we find these events, we can then apply them one after another.</p></div></aside></section><section id="slide-handling-errors"><h2>Handling errors</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    @Override
     default Observable&lt;EventApplyOutcome&gt; onException(
             Exception e, PatientAccount snapshot, PatientEvent event) {
         getLog().error("Error computing snapshot", e);
         return just(CONTINUE);
-    }</code></pre></div></div></section><section id="slide-processing-events"><h2>Processing events</h2><div class="paragraph"><p>For languages like Java, Groovy</p></div>
+    }</code></pre></div></div>
+<aside class="notes"><div class="paragraph"><p>Sometimes your code can throw exceptions.
+If it does, we need a place to catch these exceptions and decide what to do.
+We might just take the simplest path and log the exception and abort the computation for this snapshot.</p></div>
+<div class="paragraph"><p>Or, you could collect all the exceptions, and then present them to the user in a simpler form.
+This way, you can tell the user that you tried to do your best, but that wasn&#8217;t good enough.</p></div>
+<div class="paragraph"><p>So, though you can present them with a snapshot, they should take it with a grain of salt.</p></div>
+<div class="paragraph"><p>You might not want to do that for a financial transaction, but if you&#8217;re doing something for healthcare, this is much better than an error message.
+The doctor can look your condition, and the warning, and then ask the patient, "Hey, you&#8217;ve got high blood pressure, but I don&#8217;t see your blood pressure medication. Are you taking one? Let me fix the record here&#8230;&#8203;"</p></div></aside></section><section id="slide-processing-events"><h2>Processing events</h2><div class="paragraph"><p>For languages like Java, Groovy</p></div>
 <div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">    public Observable&lt;EventApplyOutcome&gt; applyPatientCreated(
             PatientCreated event, PatientAccount snapshot) {
         if (snapshot.getAggregate() == event.getAggregate()) {
@@ -312,7 +346,16 @@ We need to preserve this information in a usable way.</p></div></aside></section
         return just(CONTINUE);
     }
 
-    ...</code></pre></div></div></section><section id="slide-processing-events-2"><h2>Processing events</h2><div class="paragraph"><p>For languages with case classes</p></div>
+    ...</code></pre></div></div>
+<aside class="notes"><div class="paragraph"><p>So we&#8217;re going to assume your jvm language is very much like java.
+This works for groovy too.</p></div>
+<div class="paragraph"><p>You can write a method based on the event name that applies the event to a snapshot.
+Then it returns the outcome in an observable.</p></div>
+<div class="paragraph"><p>This needs to be done only for user events.
+Special events will not come here at all, which makes sense.
+The reason those events are special is they can be made to work in any domain.
+What good is a library if it doesn&#8217;t handle those for you.</p></div>
+<div class="paragraph"><p>It&#8217;s a bit of a problem, in that your compiler won&#8217;t tell you if you&#8217;ve covered all event types.</p></div></aside></section><section id="slide-processing-events-2"><h2>Processing events</h2><div class="paragraph"><p>For languages with case classes</p></div>
 <div class="listingblock"><div class="content"><pre class="highlight"><code class="kotlin language-kotlin">    override fun applyEvent(
         event: PatientEvent.Applicable, snapshot: PatientAccount) =
             when (event) {
@@ -328,21 +371,26 @@ We need to preserve this information in a usable way.</p></div></aside></section
                     // Your logic here
                     just(CONTINUE)
                 }
-            }</code></pre></div></div></section><section id="slide-events-2"><h2>Events</h2><div class="paragraph"><p>For languages with case classes</p></div>
-<div class="listingblock"><div class="content"><pre class="highlight"><code class="kotlin language-kotlin">sealed class PatientEvent : BaseEvent&lt;...&gt; {
+            }</code></pre></div></div>
+<aside class="notes"><div class="paragraph"><p>If you&#8217;re using something like kotlin or scala, where you&#8217;ve got case classes or sealed classes, you can do this.
+This example is in Kotlin, and uses a when statement as a method expression.</p></div>
+<div class="paragraph"><p>Now the compiler will error out if you miss out on some subclass of your events.</p></div></aside></section><section id="slide-events-2"><h2>Events</h2><div class="paragraph"><p>For languages with case classes</p></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="kotlin language-kotlin">sealed class PatientEvent : BaseEvent&lt;..&gt; {
     // Properties and methods from equivalent java class
 
     sealed class Applicable : PatientEvent() {
-        data class Created(val name: String) : Applicable() {
-            override fun getAudit(): String = "$id - Created '$name'"
-        }
+        data class Created(val name: String) : Applicable()
+        data class ProcedurePerformed(
+                val code: String, val cost: Double) : Applicable()
+        ..
     }
 
     data class Reverted(override val revertedEventId: String) :
-            PatientEvent(), RevertEvent&lt;...&gt; {
-        override fun getAudit(): String = "$id - Revert $revertedEventId"
-    }
-}</code></pre></div></div></section><section id="slide-completeness-for-java"><h2>Completeness for Java</h2><div class="paragraph"><p>&#8230;&#8203;and Groovy.</p></div>
+            PatientEvent(), RevertEvent&lt;..&gt;
+}</code></pre></div></div>
+<aside class="notes"><div class="paragraph"><p>Of course, you need to write your events using sealed classes.
+This is great for Kotlin and Scala.
+But what about Java and Groovy?</p></div></aside></section><section id="slide-completeness-for-java"><h2>Completeness for Java</h2><div class="paragraph"><p>&#8230;&#8203;and Groovy.</p></div>
 <div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">@Aggregate public class Patient {...}
 public abstract class PatientEvent {}
 
@@ -356,12 +404,17 @@ public class PatientAccountQuery {
     ...
     Observable&lt;EventApplyOutcome&gt; applyProcedurePerformed() {...}
     Observable&lt;EventApplyOutcome&gt; applyPaymentMade() {...}
-}</code></pre></div></div></section></section>
+}</code></pre></div></div>
+<aside class="notes"><div class="paragraph"><p>Java as well as groovy allow you to customize compilation a little bit.</p></div>
+<div class="paragraph"><p>Java uses Annotation Processors, Groovy uses AST Transformations.</p></div>
+<div class="paragraph"><p>With a few annotations, you can verify completeness at compile time.</p></div>
+<div class="paragraph"><p>Downsides? IDE support. Custom plugins?</p></div></aside></section></section>
 <section><section id="slide-gotchas"><h2>Gotchas</h2></section><section id="slide-lance-one" data-background-image="http://www.vosizneias.com/wp-content/uploads/2013/01/h_50493197.jpg"><div class="paragraph"><p><span class="highlighted">How many Tour de France General Classification Tour victories did this guy have on 2007-10-01?</span></p></div></section><section id="slide-lance-armstrong"><h2>Lance Armstrong</h2><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:50%" /><col style="width:50%" /></colgroup><tbody><tr><td class="tableblock halign-left valign-top"><div><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:33.3333%" /><col style="width:66.6667%" /></colgroup><tbody><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1992</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Joins Motorola</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1993</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>DNF</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1994</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>DNF</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1995</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>36</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1996</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>DNF</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1996-10-02</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Diagnosed with Cancer</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1997-02</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Declared cancer free</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1998</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Joins US Postal</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">1999</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2000</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2001</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr></tbody></table></div></td><td class="tableblock halign-left valign-top"><div><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:33.3333%" /><col style="width:66.6667%" /></colgroup><tbody><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2002</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2003</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2004</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2005</p></td><td class="tableblock halign-left valign-top"><div><div class="imageblock" style=""><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png" alt="2000px Jersey yellow.svg" height="20px" /></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2005</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Retires</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2009</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Returns from retirement</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2009</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>3</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2010</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>23</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2010</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Retires</p></div></div></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock">2012-10</p></td><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Stripped of all wins from 1998 through 2010</p></div></div></td></tr></tbody></table></div></td></tr></tbody></table></section><section id="slide-lance-two" data-background-image="http://www.vosizneias.com/wp-content/uploads/2013/01/h_50493197.jpg"><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:37.5%" /><col style="width:25%" /><col style="width:37.5%" /></colgroup><tbody><tr><td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><span class="highlighted">1. Based on what we knew in 2007, How many TdF GC Tour victories did he have on 2007-10-01?</span></p></div></div></td><td class="tableblock halign-left valign-top"></td><td class="tableblock halign-right valign-top"><div><div class="paragraph"><p><span class="highlighted">2. Based on what we know in 2017, How many TdF GC Tour victories did he have on 2007-10-01?</span></p></div></div></td></tr></tbody></table>
 <div class="paragraph fragment"><p><span class="highlighted">Asking the right question is key</span></p></div></section><section id="slide-advice-on-handling-data"><h2>Advice on handling data</h2><div class="ulist"><ul><li><p>Be very careful about what your events look like.</p></li><li><p>Don&#8217;t worry much about what your snapshots look like.</p></li></ul></div></section><section id="slide-communication-is-key" class="to-top"><h2>Communication is key</h2><blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">95% of the cost of event sourcing projects is explaining event sourcing</p>&mdash; Scott Bellware (@sbellware) <a href="https://twitter.com/sbellware/status/873723025472016384">June 11, 2017</a></blockquote>
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-<div class="paragraph"><p>Having detailed documentation on what your aggregates, events and snapshots are, really helps.</p></div></section><section id="slide-non-event-sources-of-data"><h2>Non Event Sources of data</h2><div class="paragraph"><p>When the intent of the user is not clear from the datasource.</p></div></section><section data-background-image="https://www.fluentin3months.com/wp-content/uploads/2016/01/goldilocks_2.jpg"></section><section id="slide-thank-you"><h2>Thank you</h2><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:20%" /><col style="width:80%" /></colgroup><tbody><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Slidedeck</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://github.com/rahulsom/javaone-2017-eventsourcing">rahulsom/javaone-2017-eventsourcing</a></p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Grooves</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://github.com/rahulsom/grooves">rahulsom/grooves</a></p></td></tr></tbody></table>
-<table id="otherTalks" class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:21.4285%" /><col style="width:14.2857%" /><col style="width:64.2858%" /></colgroup><tbody><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Sun 15:00</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>CON7610</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Microservices Data Patterns: CQRS and ES</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Mon 16:30</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>CON2526</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Reactive Stream Processing with Swarm and Kafka</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Mon 17:30</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>CON7474</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">ES, Distributed Systems, and CQRS with Java EE</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Tue 13:15</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>CON4083</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Async by Default, Synchronous When Necessary</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Wed 14:45</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>CON4277</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Three µS Patterns to Tear Down Your Monoliths</p></td></tr></tbody></table></section></section></div></div><script src="reveal.js/lib/js/head.min.js"></script><script src="reveal.js/js/reveal.js"></script><script>// See https://github.com/hakimel/reveal.js#configuration for a full list of configuration options
+<div class="paragraph"><p>Having detailed documentation on what your aggregates, events and snapshots are, really helps.</p></div></section><section id="slide-non-event-sources-of-data"><h2>Non Event Sources of data</h2><div class="paragraph"><p>When the intent of the user is not clear from the datasource.</p></div></section><section data-background-image="https://www.fluentin3months.com/wp-content/uploads/2016/01/goldilocks_2.jpg"></section></section>
+<section id="slide-thank-you"><h2>Thank you</h2><table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:20%" /><col style="width:80%" /></colgroup><tbody><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Slidedeck</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://github.com/rahulsom/javaone-2017-eventsourcing">rahulsom/javaone-2017-eventsourcing</a></p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Grooves</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://github.com/rahulsom/grooves">rahulsom/grooves</a></p></td></tr></tbody></table>
+<table id="otherTalks" class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:21.4285%" /><col style="width:14.2857%" /><col style="width:64.2858%" /></colgroup><tbody><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Sun 15:00</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>CON7610</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Microservices Data Patterns: CQRS and ES</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Mon 16:30</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>CON2526</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Reactive Stream Processing with Swarm and Kafka</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Mon 17:30</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>CON7474</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">ES, Distributed Systems, and CQRS with Java EE</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Tue 13:15</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>CON4083</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Async by Default, Synchronous When Necessary</p></td></tr><tr><td class="tableblock halign-right valign-top"><p class="tableblock">Wed 14:45</p></td><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>CON4277</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Three µS Patterns to Tear Down Your Monoliths</p></td></tr></tbody></table></section></div></div><script src="reveal.js/lib/js/head.min.js"></script><script src="reveal.js/js/reveal.js"></script><script>// See https://github.com/hakimel/reveal.js#configuration for a full list of configuration options
 Reveal.initialize({
   // Display controls in the bottom right corner
   controls: true,
