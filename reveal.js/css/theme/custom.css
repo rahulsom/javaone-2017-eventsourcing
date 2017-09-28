@@ -666,7 +666,8 @@ twitterwidget {
 
 .attribution {
 	position: fixed;
-	bottom: -100px !important;
+	bottom: 2em;
+	right: 2em;
 	max-width: 100%;
 }
 
@@ -677,6 +678,10 @@ twitterwidget {
 
 section[data-background-image] {
 	height: 300px;
+}
+
+section[data-background-image] .attribution {
+	bottom: -5em;
 }
 
 .highlighted a {
