@@ -683,3 +683,7 @@ twitterwidget {
 #otherTalks td {
 	font-size: 0.7em;
 }
+
+.bottom {
+	margin-top: 15% !important;
+}
