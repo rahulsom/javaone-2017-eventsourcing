@@ -582,7 +582,6 @@ td.halign-right p {
 	background-color: rgba(100, 100, 100, 0.75);
 	text-align: left;
 	max-width: 50%;
-	padding-top: 30%;
 	margin-left: -10%;
 }
 
@@ -665,15 +664,25 @@ twitterwidget {
 	border-bottom: 0 !important;
 }
 
-#slide-what-banks-typically-do .highlighted {
+.attribution {
 	position: fixed;
-	bottom: 90px;
+	bottom: -100px !important;
 	max-width: 100%;
 }
 
-#slide-what-banks-typically-do .highlighted p {
+.attribution p {
 	font-size: 0.4em;
 	text-align: center;
+}
+
+section[data-background-image] {
+	height: 300px;
+}
+
+.highlighted a {
+	color: white;
+	font-weight: bold;
+	font-style: italic;
 }
 
 #otherTalks {
@@ -686,4 +695,8 @@ twitterwidget {
 
 .bottom {
 	margin-top: 15% !important;
+}
+
+#slide-lance-one .highlighted {
+	margin-top: 30%;
 }
