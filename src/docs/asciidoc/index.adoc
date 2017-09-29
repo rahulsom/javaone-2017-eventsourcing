@@ -922,6 +922,11 @@ EPA/JASPER JUINEN, 22 July 2004. Sourced from http://www.vosizneias.com/wp-conte
 [NOTE.speaker]
 --
 Before we go into details, does anyone want to answer the question?
+
+I don't see anyone in the hall wearing lycra or leaning their bikes against the wall.
+So let's look at the raw data and see if we can answer the question.
+
+How many Tour de France victories did Lance have on this day, 10 years ago?
 --
 
 === Lance Armstrong
@@ -935,7 +940,7 @@ Before we go into details, does anyone want to answer the question?
 !1994!DNF
 !1995!36
 !1996!DNF
-!1996-10-02!Diagnosed with Cancer
+!1996-10!Diagnosed with Cancer
 !1997-02!Declared cancer free
 !1998!Joins US Postal
 !1999!image::Jersey_yellow.svg.png[height="20px"]
@@ -963,6 +968,21 @@ Before we go into details, does anyone want to answer the question?
 Jersey images from https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[Wikimedia commons]
 --
 
+[NOTE.speaker]
+--
+The victories are represented by the yellow jersey in the table.
+
+* Is the answer 7?
+* Is the answer 0?
+* Is there any other answer?
+
+Well, the fact that we have more than one answer that seems correct means, that the question is wrong.
+
+And what's worse is, we've let our users look at the same inputs as our software and now they are convinced our software is broken.
+
+So let's fix the problem.
+--
+
 [background-image="http://www.vosizneias.com/wp-content/uploads/2013/01/h_50493197.jpg"]
 [%notitle]
 === Lance Two
@@ -978,10 +998,24 @@ Jersey images from https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jer
 [.fragment]
 [.highlighted]#Ask the right question#
 
+[NOTE.speaker]
+--
+There are in fact two different questions.
+Now, I hope we have consistent answers.
+--
+
 === Advice on handling data
 
 * Be very careful about what your events look like.
 * Don't worry much about what your snapshots look like.
+
+[NOTE.speaker]
+--
+What I learnt was, that we need to be very careful when getting new kinds of data into the system.
+Mistakes made there are very hard to correct.
+
+Mistakes in processing data are relatively easy to correct.
+--
 
 [.to-top]
 === Communication is key
@@ -991,9 +1025,30 @@ Jersey images from https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jer
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 ++++
 
+[NOTE.speaker]
+--
+Having detailed documentation on what your aggregates, events and snapshots are, really helps.
+
+In the early days, we used tables and json and what not to communicate what we expected in our aggregates and events.
+
+Later on we switched to using diagrams like the ones I used in this presentation.
+This reduced the overhead of having to talk to several developers from many teams about what we were doing.
+People just began to understand from our diagrams.
+--
+
 === Non Event Sources of data
 
 When the intent of the user is not clear from the datasource.
+
+[NOTE.speaker]
+--
+One problem my team faced was data was not always event based.
+So some system would always expose their current state as an API or a file export.
+And we would have to read that and figure out what to do.
+
+Should we break down the entire resource from this source into small atomic events?
+Should we treat the whole thing as one giant event?
+--
 
 [background-image="https://www.fluentin3months.com/wp-content/uploads/2016/01/goldilocks_2.jpg"]
 [%notitle]
@@ -1002,12 +1057,19 @@ When the intent of the user is not clear from the datasource.
 [.highlighted.attribution]
 The Story of Goldilocks and The Three Bears, Award Publications LTD
 
+[NOTE.speaker]
+--
+In the end, we decided to do different things for different kinds of sources.
+It's very hard to find out what's _just right_ for a problem.
+But it's worth the trial and error if you have that luxury to find what's best.
+--
+
 == Thank you
 
 [cols=">1,<4"]
 |===
-|Slidedeck | https://github.com/rahulsom/javaone-2017-eventsourcing[rahulsom/javaone-2017-eventsourcing]
-|Grooves   | https://github.com/rahulsom/grooves[rahulsom/grooves]
+|Slidedeck | http://bit.ly/2017-es[bit.ly/2017-es]
+|Grooves   | https://github.com/rahulsom/grooves[github.com/rahulsom/grooves]
 |===
 
 [id="otherTalks", cols=">3,<2,<9"]
@@ -1018,3 +1080,14 @@ The Story of Goldilocks and The Three Bears, Award Publications LTD
 | Tue 13:15 | *CON4083* | Async by Default, Synchronous When Necessary
 | Wed 14:45 | *CON4277* | Three µS Patterns to Tear Down Your Monoliths
 |===
+
+[NOTE.speaker]
+--
+Before I open the floor for the last questions, I would like to thank you all for coming here today.
+If you go to those two urls under github, you can find the slides or the library I've created for solving these problems.
+
+If you're interested in learning more about event sourcing, 2017 is a great year at Java One for Event Sourcing.
+There are 5 other talks that have Event Sourcing or CQRS in their abstract.
+
+Once again, thank you! And I hope you have a great time at Java One.
+--
