@@ -746,3 +746,7 @@ section[data-background-image] .attribution {
 	left: 1em;
 	color: white;
 }
+
+.footer p {
+	font-family: "SunSans", "Source Sans Pro", Helvetica, sans-serif;
+}
