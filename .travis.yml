@@ -1,5 +1,5 @@
 language: groovy
-script: rm -rf build && ./gradlew gitPublishPush --stacktrace
+script: ./travis.sh
 jdk:
 - oraclejdk8
 cache:
