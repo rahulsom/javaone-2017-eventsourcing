@@ -283,3 +283,13 @@ section[data-background-image] {
 .footer p {
     font-family: $headingFont;
 }
+
+section[data-background-image="./images/redbg.jpg"] {
+    &, h1, h2, h3, h4, h5, h6 {
+        color: #fff;
+    }
+}
+
+section#slide-bad-example-1 {
+    top: 0 !important;
+}

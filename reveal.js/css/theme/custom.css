@@ -750,3 +750,11 @@ section[data-background-image] .attribution {
 .footer p {
 	font-family: "SunSans", "Source Sans Pro", Helvetica, sans-serif;
 }
+
+section[data-background-image="./images/redbg.jpg"], section[data-background-image="./images/redbg.jpg"] h1, section[data-background-image="./images/redbg.jpg"] h2, section[data-background-image="./images/redbg.jpg"] h3, section[data-background-image="./images/redbg.jpg"] h4, section[data-background-image="./images/redbg.jpg"] h5, section[data-background-image="./images/redbg.jpg"] h6 {
+	color: #fff;
+}
+
+section#slide-bad-example-1 {
+	top: 0 !important;
+}
