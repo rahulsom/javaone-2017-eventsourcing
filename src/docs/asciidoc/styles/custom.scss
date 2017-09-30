@@ -14,6 +14,31 @@
 // Include theme-specific fonts
 @import url(../../lib/font/source-sans-pro/source-sans-pro.css);
 
+@font-face {
+    font-family: 'SunSans';
+    src: url('sunlt500.woff') format('woff'),
+    url('sunlt500.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'SunSans';
+    src: url('sunlt500.woff') format('woff'),
+    url('sunlt500.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'SunSans';
+    src: url('sunlt500.woff') format('woff'),
+    url('sunlt500.woff2') format('woff2');
+    font-weight: 800;
+    font-style: normal;
+}
+
+
 // Override theme settings (see ../template/settings.scss)
 $backgroundColor: #fff;
 
@@ -22,7 +47,7 @@ $headingColor: #222;
 
 $mainFontSize: 38px;
 $mainFont: 'Source Sans Pro', Helvetica, sans-serif;
-$headingFont: 'Source Sans Pro', Helvetica, sans-serif;
+$headingFont: 'SunSans', 'Source Sans Pro', Helvetica, sans-serif;
 $headingTextShadow: none;
 $headingLetterSpacing: normal;
 $headingTextTransform: uppercase;
@@ -31,9 +56,9 @@ $linkColor: #2a76dd;
 $linkColorHover: lighten( $linkColor, 15% );
 $selectionBackgroundColor: lighten( $linkColor, 25% );
 
-$heading1Size: 2.5em;
-$heading2Size: 1.6em;
-$heading3Size: 1.3em;
+$heading1Size: 1.6em;
+$heading2Size: 1.3em;
+$heading3Size: 1.15em;
 $heading4Size: 1.0em;
 
 section.has-dark-background {
@@ -238,4 +263,33 @@ section[data-background-image] {
     .attribution {
         bottom: 0em !important;
     }
+}
+
+.slide-background.title {
+    background: bottom url('u19-bg-01.jpg');
+    background-size: cover;
+}
+.title h1, .author small  {
+    color: white;
+}
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 1em;
+    color: white;
+}
+
+.footer p {
+    font-family: $headingFont;
+}
+
+section[data-background-image="./images/redbg.jpg"] {
+    &, h1, h2, h3, h4, h5, h6 {
+        color: #fff;
+    }
+}
+
+section#slide-bad-example-1 {
+    top: 0 !important;
 }

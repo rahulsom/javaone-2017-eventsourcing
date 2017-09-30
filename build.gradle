@@ -70,8 +70,12 @@ asciidoctor {
     }
     resources {
         from(new File(sourceDir, "styles")) {
-            include '**'
+            include '**/*.scss'
             into './reveal.js/css/theme/source'
+        }
+        from(new File(sourceDir, "styles")) {
+            include '**'
+            into './reveal.js/css/theme'
         }
         from(sourceDir) {
             include 'images/**'

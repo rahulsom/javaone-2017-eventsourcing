@@ -12,6 +12,11 @@ This talk is about Event Sourcing, JVM Languages and how they play with each oth
 If you have a question, feel free to grab my attention; I'll do my best to answer it right away.
 --
 
+[.footer]
+--
+JavaOne 2017
+--
+
 == About Me
 
 [.step]
@@ -116,7 +121,7 @@ It beautifully represents what we need to be doing.
 Sometimes you'll have legal requirements to remove data, i.e. offer consumers a right to be forgotten.
 --
 
-[background-color="darkred"]
+[background-image="redbg.jpg"]
 == Bad Example 1
 
 Mark and Jane share a bank account.
@@ -330,7 +335,7 @@ For each event, given the _before_ state of the snapshot, you should be able to 
 That computation is what we call the _query_.
 --
 
-[background-color="darkred"]
+[background-image="redbg.jpg"]
 == But it's not that simple
 
 [NOTE.speaker]
@@ -361,7 +366,7 @@ If we've got a partial computation and we can persist it, we would like to reuse
 In Mathematics, it's called the distributive property.
 --
 
-[background-color="darkred"]
+[background-image="redbg.jpg"]
 === We're not done yet
 
 There are special events
@@ -444,7 +449,7 @@ Oh, and these events can be merged too.
 You want to be careful enough to revert both events at the same time.
 --
 
-[background-color="darkred"]
+[background-image="redbg.jpg"]
 == Bad Example 2
 
 [cols="1a,1a"]
@@ -644,10 +649,6 @@ public class PatientAccount
     }
 }
 ----
-
-++++
-<script>$('#slide-snapshots pre').attr('data-line', '11-13');</script>
-++++
 
 [NOTE.speaker]
 --
@@ -962,11 +963,6 @@ How many Tour de France victories did Lance have on this day, 10 years ago?
 !2012-10!Stripped of all wins from 1998 through 2010
 !===
 |===
-
-[.highlighted.attribution]
---
-Jersey images from https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Jersey_yellow.svg/2000px-Jersey_yellow.svg.png[Wikimedia commons]
---
 
 [NOTE.speaker]
 --
