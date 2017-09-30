@@ -1,15 +1,7 @@
-/**
- * White theme for reveal.js. This is the opposite of the 'black' theme.
- *
- * By Hakim El Hattab, http://hakim.se
- */
-
-
 // Default mixins and settings -----------------
 @import "../template/mixins";
 @import "../template/settings";
 // ---------------------------------------------
-
 
 // Include theme-specific fonts
 @import url(../../lib/font/source-sans-pro/source-sans-pro.css);
@@ -43,23 +35,23 @@
 $backgroundColor: #fff;
 
 $mainColor: #222;
-$headingColor: #222;
+$headingColor: #77BC1F;
 
-$mainFontSize: 38px;
-$mainFont: 'Source Sans Pro', Helvetica, sans-serif;
-$headingFont: 'SunSans', 'Source Sans Pro', Helvetica, sans-serif;
+$mainFontSize: 42px;
+$mainFont: 'Calibri', Helvetica, sans-serif;
+$headingFont: 'Calibri', Helvetica, sans-serif;
 $headingTextShadow: none;
 $headingLetterSpacing: normal;
 $headingTextTransform: uppercase;
 $headingFontWeight: 600;
-$linkColor: #2a76dd;
+$linkColor: #77BC1F;
 $linkColorHover: lighten( $linkColor, 15% );
 $selectionBackgroundColor: lighten( $linkColor, 25% );
 
-$heading1Size: 1.6em;
-$heading2Size: 1.3em;
-$heading3Size: 1.15em;
-$heading4Size: 1.0em;
+$heading1Size: 1.25em;
+$heading2Size: 1.05em;
+$heading3Size: 0.95em;
+$heading4Size: 0.85em;
 
 section.has-dark-background {
     &, h1, h2, h3, h4, h5, h6 {
@@ -67,6 +59,85 @@ section.has-dark-background {
     }
 }
 
+
+// Theme template ------------------------------
+@import "../template/theme";
+// ---------------------------------------------
+
+.header {
+    position:absolute;
+    top: 0;
+    width: 100%;
+}
+
+.footer{
+    position:absolute;
+    bottom: 0;
+    height: 6.0%;
+    background-color: rgba(80, 80, 80, 0.9);
+    width: 100%;
+    z-index: 0;
+}
+
+.footer .logo {
+    height: 60%;
+    width: 25%;
+
+    margin-top: 0.75%;
+    margin-bottom: 0.75%;
+
+    margin-left: 2%;
+    background-image: url("source/transcendinsights_green_white.png");
+    background-position-y: center;
+    background-position-x: left;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+.reveal {
+    h1, h2, h3, h4, h5, h6 {
+        text-align: left;
+    }
+
+    .slide-number {
+        background-color: transparent;
+    }
+
+    .slides {
+        section {
+            top: 0 !important;
+        }
+    }
+}
+
+.author {
+    text-align: left;
+
+    small {
+        margin-left: 13%;
+        font-size: 0.7em;
+    }
+}
+
+.slide-background.title {
+    background-image: url("source/Background-Building.png");
+    background-position-y: center;
+    background-position-x: left;
+    background-size: cover;
+    background-repeat: no-repeat;
+    opacity : 0.2;
+}
+.slide-background.divider {
+    background-image: url("source/Background-Glider.png");
+    background-position-y: center;
+    background-position-x: left;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.reveal .controls {
+    bottom: 50px;
+}
 
 // Theme template ------------------------------
 @import "../template/theme";

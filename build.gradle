@@ -77,6 +77,10 @@ asciidoctor {
             include '**'
             into './reveal.js/css/theme'
         }
+        from(new File(sourceDir, "styles/images")) {
+            include '**'
+            into './reveal.js/css/theme/images'
+        }
         from(sourceDir) {
             include 'images/**'
             include 'snippets/**'
@@ -89,8 +93,8 @@ asciidoctor {
 
     backends 'revealjs'
 
-    attributes   \
-        'build-gradle': file('build.gradle'),
+    attributes    \
+         'build-gradle': file('build.gradle'),
             'sourcedir': project.sourceSets.main.java.srcDirs[0],
             'endpoint-url': 'http://example.org',
             'imagesdir': './images',
