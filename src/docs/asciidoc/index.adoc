@@ -902,6 +902,20 @@ With a few annotations, you can verify completeness at compile time.
 Downsides? IDE support. Custom plugins?
 --
 
+=== Usage
+
+[source,java]
+----
+Patient patient = ...
+Observable<PatientAccount> account;
+
+// By Date
+account = patientAccountQuery.computeSnapshot(patient, new Date());
+
+// By version
+account = patientAccountQuery.computeSnapshot(patient, 7L);
+----
+
 == Gotchas
 
 [NOTE.speaker]
