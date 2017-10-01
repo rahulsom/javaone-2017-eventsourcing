@@ -406,7 +406,14 @@ public class PatientAccountQuery {
 <aside class="notes"><div class="paragraph"><p>Java as well as groovy allow you to customize compilation a little bit.</p></div>
 <div class="paragraph"><p>Java uses Annotation Processors, Groovy uses AST Transformations.</p></div>
 <div class="paragraph"><p>With a few annotations, you can verify completeness at compile time.</p></div>
-<div class="paragraph"><p>Downsides? IDE support. Custom plugins?</p></div></aside></section></section>
+<div class="paragraph"><p>Downsides? IDE support. Custom plugins?</p></div></aside></section><section id="slide-usage"><h2>Usage</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">Patient patient = ...
+Observable&lt;PatientAccount&gt; account;
+
+// By Date
+account = patientAccountQuery.computeSnapshot(patient, new Date());
+
+// By version
+account = patientAccountQuery.computeSnapshot(patient, 7L);</code></pre></div></div></section></section>
 <section><section id="slide-gotchas"><h2>Gotchas</h2><aside class="notes"><div class="paragraph"><p>This is my favorite part of this presentation.</p></div>
 <div class="paragraph"><p>Some of these are things I wish I knew before I started exploring this space.</p></div></aside></section><section id="slide-lance-one" data-background-image="http://www.vosizneias.com/wp-content/uploads/2013/01/h_50493197.jpg"><div class="paragraph"><p><span class="highlighted">How many Tour de France General Classification Tour victories did this guy have on 2007-10-01?</span></p></div>
 <div class="paragraph highlighted attribution"><p>EPA/JASPER JUINEN, 22 July 2004. Sourced from <a href="http://www.vosizneias.com/wp-content/uploads/2013/01/h_50493197.jpg">vosizneias</a></p></div>
