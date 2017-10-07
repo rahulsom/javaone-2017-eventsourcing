@@ -9,7 +9,8 @@ asciimath2jax: {
   ignoreClass: "nostem|noasciimath"
 },
 TeX: { equationNumbers: { autoNumber: "none" } }
-});</script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.4.0/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script><link href="reveal.js/lib/css/zenburn.css" rel="stylesheet" /><script>document.write( '<link rel="stylesheet" href="reveal.js/css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );</script><script src="https://code.jquery.com/jquery-2.2.4.min.js" ></script></head><body><div class="reveal"><div class="slides"><section class="title" data-state="title"><h1>Event Sourcing with JVM Languages</h1><div class="preamble"><aside class="notes"><div class="paragraph"><p>Good afternoon everyone! My name is Rahul.
+});</script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.4.0/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script><link href="reveal.js/lib/css/zenburn.css" rel="stylesheet" /><script>document.write( '<link rel="stylesheet" href="reveal.js/css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );</script><script src="https://code.jquery.com/jquery-2.2.4.min.js" ></script>
+<div id="night" style="display: none;"></div></head><body><div class="reveal"><div class="slides"><section class="title" data-state="title"><h1>Event Sourcing with JVM Languages</h1><div class="preamble"><aside class="notes"><div class="paragraph"><p>Good afternoon everyone! My name is Rahul.
 This talk is about Event Sourcing, JVM Languages and how they play with each other.
 If you have a question, feel free to grab my attention; I&#8217;ll do my best to answer it right away.</p></div></aside>
 <div class="openblock footer"><div class="content"><div class="paragraph"><p>JavaOne 2017</p></div></div></div></div><p class="author"><small>Rahul Somasunderam</small></p></section>
@@ -529,4 +530,48 @@ Reveal.initialize({
       { src: 'reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
       { src: 'reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
   ]
-});</script><script src="scripts/prism.js"></script></body></html>
+});</script><script src="scripts/prism.js"></script>
+<script lang="javascript">
+    console.clear();
+
+    window.addEventListener("load", configNight);
+
+    function configNight(event) {
+        spotlight = document.getElementById("night");
+        spotlightwidth = 128;
+        spotlightheight = 128;
+
+        //register an event to move the spotlight
+        document.onmousemove = function (event) {
+            spotlight.style.backgroundImage = "-webkit-radial-gradient("
+                + event.pageX + "px " + event.pageY + "px, "
+                + spotlightwidth + "px " + spotlightheight + "px, "
+                + "transparent 1%, transparent 99%, rgba(0,0,0,0.6))";
+            sizedisplay.value = spotlightwidth + "x" + spotlightheight;
+        };
+        //fire the event for the first time
+        document.onmousemove({pageX: 100, pageY: 100});
+    }
+
+    document.addEventListener("keydown", keyDownTextField, false);
+
+    var nightMode = false;
+
+    function keyDownTextField(e) {
+        var keyCode = e.keyCode;
+        if (keyCode == 65) {
+            if (nightMode) {
+                console.log("Disabling night mode");
+                spotlight.style.display = 'none';
+                nightMode = false;
+            } else {
+                console.log("Enabling night mode");
+                spotlight.style.display = 'block';
+                nightMode = true;
+            }
+        } else {
+            console.log("KeyPress: " + keyCode);
+        }
+    }
+
+</script></body></html>
