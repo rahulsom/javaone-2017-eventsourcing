@@ -87,7 +87,7 @@ section.has-dark-background {
     margin-bottom: 0.75%;
 
     margin-left: 2%;
-    background-image: url("source/transcendinsights_green_white.png");
+    background-image: url("images/transcendinsights_green_white.png");
     background-position-y: center;
     background-position-x: left;
     background-size: contain;
@@ -347,7 +347,6 @@ section[data-background-image] {
 .footer {
     position: fixed;
     bottom: 0;
-    left: 1em;
     color: white;
 }
 
