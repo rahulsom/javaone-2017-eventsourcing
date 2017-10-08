@@ -15,7 +15,6 @@
                 + event.pageX + "px " + event.pageY + "px, "
                 + spotlightwidth + "px " + spotlightheight + "px, "
                 + "transparent 1%, transparent 99%, rgba(0,0,0,0.6))";
-            sizedisplay.value = spotlightwidth + "x" + spotlightheight;
         };
         //fire the event for the first time
         document.onmousemove({pageX: 100, pageY: 100});
@@ -37,8 +36,6 @@
                 spotlight.style.display = 'block';
                 nightMode = true;
             }
-        } else {
-            console.log("KeyPress: " + keyCode);
         }
     }
 
